@@ -61,12 +61,17 @@ def cli(ctx, canvas_url, canvas_token, env):
 
 
 @cli.command()
+@click.option('--course-id', '-c', required=False, type=int)
 @pass_canvas
-def courses(canvas):
+def courses(canvas, course_id):
     courses = canvas.get_courses()
     for course in courses:
         if hasattr(course, 'name'):
-            print(f"{course.id},{course.name}")
+            if course_id is not None:
+                if course.id == course_id:
+                    print(f"{course.id},{course.name}")
+            else:
+                print(f"{course.id},{course.name}")
 
 
 @cli.command()
