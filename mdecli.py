@@ -1,8 +1,4 @@
-"""MDE Canvas Helper Program.
-
-Automates MDE tasks by interacting with Canvas directly.
-
-This program requires there to be a Canvas API token in a `.env` file.
+"""CLI for general non-Canvas MDE tasks.
 """
 
 import click
