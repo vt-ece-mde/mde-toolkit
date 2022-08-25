@@ -334,7 +334,7 @@ def make_group_dirs(canvas, course_id, output, dry_run):
 @click.option('--delimiter','-d', type=str, default='|', help="Output record delimiter")
 @click.option('--sort-key','-s', type=str, default='group_name', help="Sorting key")
 @pass_canvas
-def spreadsheet(
+def ipr_history_spreadsheet(
     canvas: Canvas,
     course_id: int,
     assignment_id: int|list[int], # List of assignment IDs for URL linking.
