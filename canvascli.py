@@ -327,6 +327,34 @@ def make_group_dirs(canvas, course_id, output, dry_run):
             os.makedirs(path)
 
 
+@cli.command()
+@click.option('--course-id', '-c', required=True, type=int, help='Course ID')
+@click.option('--assignment-id', '-a', required=True, type=int, multiple=True, help="Assignment ID")
+@click.option('--n-feedback', '-n', required=True, type=int, help='Number of feedback rounds')
+@click.option('--delimiter','-d', type=str, default='|', help="Output record delimiter")
+@click.option('--sort-key','-s', type=str, default='group_name', help="Sorting key")
+@pass_canvas
+def spreadsheet(
+    canvas: Canvas,
+    course_id: int,
+    assignment_id: int|list[int], # List of assignment IDs for URL linking.
+    n_feedback: int, # Number of IPR feedback rounds.
+    delimiter: str = ',',
+    sort_key: str = 'group_name',
+    ):
+
+    mdetk.generate_ipr_history_spreadsheet(
+        canvas=canvas,
+        course_id=course_id,
+        assignment_id=assignment_id,
+        n_feedback=n_feedback,
+        delimiter=delimiter,
+        sort_key=sort_key,
+        outfile=sys.stdout,
+    )
+
+
+
 if __name__ == '__main__':
     cli()
 
