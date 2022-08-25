@@ -8,7 +8,7 @@ from canvasapi.group import Group
 import logging
 import networkx as nx
 import os
-from typing import Dict, Tuple
+from typing import Dict, TextIO, Tuple
 from xml.etree import ElementTree
 from xml.sax import saxutils
 
@@ -87,6 +87,95 @@ def get_users_by_group(canvas: Canvas, course_id: int) -> Tuple[Dict[int,User],D
 
 def speed_grader_url(canvas: Canvas, course_id: int, assignment_id: int, student_id: int):
     return f"{canvas._Canvas__requester.original_url}/courses/{course_id}/gradebook/speed_grader?assignment_id={assignment_id}&student_id={student_id}"
+
+
+
+
+def generate_ipr_history_spreadsheet(
+    canvas: Canvas,
+    course_id: int,
+    assignment_id: int|list[int], # List of assignment IDs for URL linking.
+    outfile: TextIO,
+    n_feedback: int, # Number of IPR feedback rounds.
+    delimiter: str = ',',
+    sort_key: str = 'group_name',
+    ):
+    """Generates a CSV-like IPR history spreadsheet template.
+
+    Args:
+        canvas (Canvas): Canvas API object.
+        course_id (int): Course ID number.
+        assignment_id (int | list[int]): Assignment IDs for URL construction.
+        outfile (TextIO): Output file-like object.
+        n_feedback (int): Number of desired IPR feedback rounds.
+        sort_key (str, optional): Denotes how records should be sorted (i.e., by "user_name", "group_name"). Defaults to 'group_name'.
+    """
+
+    # Convert assignment ID to list of integers.
+    if isinstance(assignment_id, int):
+        assignment_id = [assignment_id]
+
+    # Get linked users to groups.
+    users, groups, user_to_group = get_users_by_group(canvas, course_id)
+
+    # Get all assignment info.
+    course = canvas.get_course(course_id)
+    assignments = [course.get_assignment(aid) for aid in assignment_id]
+
+    # Organize list of user IDs, in various sorting orders.
+    if sort_key == 'user_name':
+        uids = sorted(users.keys(), key=lambda uid: users[uid].sortable_name)
+    elif sort_key == 'group_name':
+        uids = sorted(users.keys(), key=lambda uid: groups[user_to_group[uid]].name)
+    else:
+        uids = list(users.keys())
+
+    # Beginning header.
+    header_items = ['User Name', 'Group Name']
+
+    # List of columns that should be empty.
+    cols_empty = []
+    for i in range(n_feedback):
+        cols_empty.append(f"Feedback {i+1} Grade")
+    cols_empty.extend([
+        "Computed Final Grade (Mean)",
+        "GTA Adjusted Final Grade",
+        "Self-Assessment Score Reduction (- # of points: 0 is perfect, -10 is poor)",
+        "Final Grade",
+        "IPR History",
+        "Final Assessment Comments",
+    ])
+    header_items.extend(cols_empty)
+
+    # URL columns.
+    cols_url = [f"(URL) {a.name}" for a in assignments]
+    header_items.extend(cols_url)
+
+    # Write the header to the file.
+    header = delimiter.join(header_items)
+    outfile.write(header)
+
+    # Write the user information to the file.
+    for uid in uids:
+
+        # Baseline records.
+        record = [
+            users[uid].sortable_name, # User name
+            groups[user_to_group[uid]].name, # Group name
+        ]
+
+        # Empty columns.
+        record.extend(['' for _ in cols_empty])
+
+        # URL records.
+        urls = [
+            speed_grader_url(canvas, course_id, aid, uid)
+            for aid in assignment_id
+        ]
+        record.extend(urls)
+
+        # Write records to file
+        outfile.write(f"\n{delimiter.join(str(r) for r in record)}")
 
 
 
