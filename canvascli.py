@@ -373,7 +373,7 @@ def ipr_history_spreadsheet(
     course_id: str,
     assignment_id: list[str], # List of assignment IDs for URL linking.
     n_feedback: int, # Number of IPR feedback rounds.
-    delimiter: str = ',',
+    delimiter: str = '|',
     sort_key: str = 'group_name',
     ):
 
