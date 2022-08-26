@@ -180,6 +180,7 @@ def generate_ipr_history_spreadsheet(
 
     # List of columns that should be empty.
     cols_empty = []
+    cols_empty.append(f"GTA Grader")
     for i in range(n_feedback):
         cols_empty.append(f"Feedback {i+1} Grade")
         cols_empty.append(f"Feedback {i+1} Comments")
