@@ -362,25 +362,45 @@ def make_group_dirs(canvas, course_id, output, dry_run):
 
 
 @cli.command()
-@click.option('--course-id', '-c', required=True, type=int, help='Course ID')
-@click.option('--assignment-id', '-a', required=True, type=int, multiple=True, help="Assignment ID")
+@click.option('--course-id', '-c', required=True, type=str, help='Course ID')
+@click.option('--assignment-id', '-a', required=True, type=str, multiple=True, help="Assignment ID")
 @click.option('--n-feedback', '-n', required=True, type=int, help='Number of feedback rounds')
 @click.option('--delimiter','-d', type=str, default='|', help="Output record delimiter")
 @click.option('--sort-key','-s', type=str, default='group_name', help="Sorting key")
 @pass_canvas
 def ipr_history_spreadsheet(
     canvas: Canvas,
-    course_id: int,
-    assignment_id: int|list[int], # List of assignment IDs for URL linking.
+    course_id: str,
+    assignment_id: list[str], # List of assignment IDs for URL linking.
     n_feedback: int, # Number of IPR feedback rounds.
     delimiter: str = ',',
     sort_key: str = 'group_name',
     ):
 
+    # Try to convert course ID to integer.
+    try:
+        converted_course_id = int(course_id)
+    # Extract course ID from URL.
+    except:
+        d = mdetk.parse_canvas_url(course_id)
+        converted_course_id = int(d['courses'])
+
+    # Process assignment IDs.
+    converted_assignment_id = []
+    for aid in assignment_id:
+        # Try to convert assignment IDs to integer.
+        try:
+            converted_assignment_id.append(int(aid))
+        # Extract assignment ID from URL.
+        except:
+            d = mdetk.parse_canvas_url(aid)
+            converted_assignment_id.append(int(d['assignments']))
+
+
     mdetk.generate_ipr_history_spreadsheet(
         canvas=canvas,
-        course_id=course_id,
-        assignment_id=assignment_id,
+        course_id=converted_course_id,
+        assignment_id=converted_assignment_id,
         n_feedback=n_feedback,
         delimiter=delimiter,
         sort_key=sort_key,
