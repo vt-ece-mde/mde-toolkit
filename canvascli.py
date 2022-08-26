@@ -8,6 +8,8 @@ This program requires there to be a Canvas API token in a `.env` file.
 # TODO: Retrieve user and group
 # TODO: Combinations of users for each GTA
 
+
+from pathlib import Path
 from canvasapi import Canvas
 import click
 from dataclasses import dataclass, asdict
@@ -23,7 +25,7 @@ logger.setLevel(logging.DEBUG)
 
 # COURSE_NAME, COURSE_ID = "Fall 2021 ECE 4805", 136329
 # COURSE_NAME, COURSE_ID = "ECE 4806 MDE Fall 2021", 136333
-COURSE_NAME, COURSE_ID = "ECE 4806 - MDE Spring 2021", 125412
+# COURSE_NAME, COURSE_ID = "ECE 4806 - MDE Spring 2021", 125412
 
 
 @dataclass
@@ -61,9 +63,16 @@ def cli(ctx, canvas_url, canvas_token, env):
 
 
 @cli.command()
+@click.option('--url', '-u', required=False, type=str)
 @click.option('--course-id', '-c', required=False, type=int)
 @pass_canvas
-def courses(canvas, course_id):
+def courses(canvas, url, course_id):
+
+    # Extract course ID from URL.
+    if url is not None:
+        d = mdetk.parse_canvas_url(url)
+        course_id = int(d['courses'])
+
     courses = canvas.get_courses()
     for course in courses:
         if hasattr(course, 'name'):
@@ -75,12 +84,22 @@ def courses(canvas, course_id):
 
 
 @cli.command()
-@click.option('--course-id', '-c', required=True, type=int)
+@click.option('--url', '-u', required=False, type=str)
+@click.option('--course-id', '-c', required=False, type=int)
 @click.option('--format', '-f', required=False, type=bool, is_flag=True, help='Format group name to be easily parsable by software')
 @click.option('--no-id', '-n', required=False, type=bool, is_flag=True, help='Removes group ID from output')
 @pass_canvas
-def groups(canvas, course_id, format, no_id):
+def groups(canvas, url, course_id, format, no_id):
+    assert url is not None or course_id is not None
+
+    # Extract course ID from URL.
+    if url is not None:
+        d = mdetk.parse_canvas_url(url)
+        course_id = int(d['courses'])
+
+    # Get course from ID.
     course = canvas.get_course(course_id)
+
     for group in course.get_groups():
         group_name = group.name
 
@@ -96,11 +115,18 @@ def groups(canvas, course_id, format, no_id):
 
 
 @cli.command()
-@click.option('--course-id', '-c', required=True, type=int)
+@click.option('--url', '-u', required=False, type=str)
+@click.option('--course-id', '-c', required=False, type=int)
 @click.option('--delimiter','-d', type=str, default='|', help="Output record delimiter")
 @click.option('--sort-by', '-s', type=click.Choice(['user_name', 'user_id'], case_sensitive=False), default='user_id', show_default=True)
 @pass_canvas
-def students(canvas, course_id, delimiter, sort_by):
+def students(canvas, url, course_id, delimiter, sort_by):
+    assert url is not None or course_id is not None
+
+    # Extract course ID from URL.
+    if url is not None:
+        d = mdetk.parse_canvas_url(url)
+        course_id = int(d['courses'])
 
     # Get course object and all student objects.
     course = canvas.get_course(course_id)
@@ -123,11 +149,19 @@ def students(canvas, course_id, delimiter, sort_by):
 
 
 @cli.command()
-@click.option('--course-id', '-c', required=True, type=int)
+@click.option('--url', '-u', required=False, type=str)
+@click.option('--course-id', '-c', required=False, type=int)
 @click.option('--delimiter','-d', type=str, default='|', help="Output record delimiter")
 @click.option('--sort-by', '-s', type=click.Choice(['name', 'id'], case_sensitive=False), default='id', show_default=True)
 @pass_canvas
-def assignments(canvas, course_id, delimiter, sort_by):
+def assignments(canvas, url, course_id, delimiter, sort_by):
+
+    assert url is not None or course_id is not None
+
+    # Extract course ID from URL.
+    if url is not None:
+        d = mdetk.parse_canvas_url(url)
+        course_id = int(d['courses'])
 
     # Set sorting key.
     if sort_by == 'name':
