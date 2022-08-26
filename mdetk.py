@@ -11,8 +11,34 @@ import os
 from typing import Dict, TextIO, Tuple
 from xml.etree import ElementTree
 from xml.sax import saxutils
+from urllib.parse import urlparse
 
 logger = logging.getLogger()
+
+
+
+
+def parse_canvas_url(url: str) -> dict:
+    """Extract information from a Canvas URL.
+
+    Args:
+        url (str): The URL string.
+
+    Returns:
+        dict: Dictionary of extracted information (keys will be identical to URL contents).
+    """
+    o = urlparse(url)
+    s = list(filter(None, o.path.split('/')))
+
+    # Group elements with their next neighbor.
+    g = list(zip(s[::2], s[1::2]))
+
+    # Create dictionary from grouped elements.
+    d = dict(g)
+
+    # Return dictionary.
+    return d
+
 
 
 def format_group_name(group: str) -> str:
