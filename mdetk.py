@@ -8,14 +8,33 @@ from canvasapi.group import Group
 import logging
 import networkx as nx
 import os
-from typing import Dict, TextIO, Tuple
+from typing import Any, Callable, Dict, TextIO, Tuple, TypeVar
 from xml.etree import ElementTree
 from xml.sax import saxutils
 from urllib.parse import urlparse
 
 logger = logging.getLogger()
 
+T = TypeVar('T') # Generic type.
 
+def parse_value_or_url(v: Any, t: Callable[[Any], T], key: str = None) -> T:
+    """Convert a given value to the desired type, or parse it from a Canvas URL.
+
+    Args:
+        v (Any): The value to be converted.
+        t (Callable[[Any], T]): Type conversion function.
+        key (str, optional): Desired URL key. Defaults to `None`.
+
+    Returns:
+        T: _description_
+    """
+    # Try to convert value directly to type.
+    try:
+        return t(v)
+    # Extract value from URL and convert to type.
+    except:
+        d = parse_canvas_url(v)
+        return t(d[key])
 
 
 def parse_canvas_url(url: str) -> dict:
