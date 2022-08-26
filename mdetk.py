@@ -182,6 +182,7 @@ def generate_ipr_history_spreadsheet(
     cols_empty = []
     for i in range(n_feedback):
         cols_empty.append(f"Feedback {i+1} Grade")
+        cols_empty.append(f"Feedback {i+1} Comments")
     cols_empty.extend([
         "Computed Final Grade (Mean)",
         "GTA Adjusted Final Grade",
