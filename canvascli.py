@@ -377,25 +377,13 @@ def ipr_history_spreadsheet(
     sort_key: str = 'group_name',
     ):
 
-    # Try to convert course ID to integer.
-    try:
-        converted_course_id = int(course_id)
-    # Extract course ID from URL.
-    except:
-        d = mdetk.parse_canvas_url(course_id)
-        converted_course_id = int(d['courses'])
+    # Convert course ID to integer or parse from URL.
+    converted_course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
 
-    # Process assignment IDs.
-    converted_assignment_id = []
-    for aid in assignment_id:
-        # Try to convert assignment IDs to integer.
-        try:
-            converted_assignment_id.append(int(aid))
-        # Extract assignment ID from URL.
-        except:
-            d = mdetk.parse_canvas_url(aid)
-            converted_assignment_id.append(int(d['assignments']))
-
+    # Convert assignment IDs to integer or parse from URL.
+    converted_assignment_id = [
+        mdetk.parse_value_or_url(aid, int, 'assignments') for aid in assignment_id
+    ]
 
     mdetk.generate_ipr_history_spreadsheet(
         canvas=canvas,
