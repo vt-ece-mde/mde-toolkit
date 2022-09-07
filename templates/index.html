@@ -1,0 +1,14 @@
+<!doctype html>
+<head>
+    <title>MDE Toolkit</title>
+</head>
+<body>
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('index') }}">Index</a>
+
+    {% block body %}
+
+    <p>index</p>
+
+    {% endblock %}
+</body>
