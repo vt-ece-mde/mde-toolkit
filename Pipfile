@@ -10,6 +10,8 @@ tqdm = "*"
 click = "*"
 numpy = "*"
 networkx = "*"
+flask = "*"
+gunicorn = "*"
 
 [dev-packages]
 matplotlib = "*"
