@@ -226,6 +226,13 @@ def generate_ipr_history_spreadsheet(
 
 
 
+
+
+###
+# Drive architecture codebase.
+###
+
+
 def parse_drive_architecture_xml(tree: ElementTree) -> nx.MultiGraph:
     root = tree.getroot()
 
