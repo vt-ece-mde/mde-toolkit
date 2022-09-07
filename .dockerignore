@@ -1,0 +1,8 @@
+# Ignore everything.
+**
+
+# Add explicit things.
+!Pipfile
+!Pipfile.lock
+!templates/*/*.html
+!*/*.py
