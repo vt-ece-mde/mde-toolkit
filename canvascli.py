@@ -66,18 +66,13 @@ def cli(ctx, canvas_url, canvas_token, env):
 @click.option('--course-id', '-c', required=False, type=str)
 @pass_canvas
 def courses(canvas, course_id):
-
     # Convert course ID to integer or parse from URL.
     course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
 
-    courses = canvas.get_courses()
-    for course in courses:
-        if hasattr(course, 'name'):
-            if course_id is not None:
-                if course.id == course_id:
-                    print(f"{course.id},{course.name}")
-            else:
-                print(f"{course.id},{course.name}")
+    # Print courses based on any filtering.
+    gen = mdetk.courses(canvas=canvas, course_id=course_id)
+    for course in gen:
+        print(f"{course.id},{course.name}")
 
 
 @cli.command()

@@ -5,6 +5,8 @@ This module contains functions that aid MDE course operation.
 from canvasapi import Canvas
 from canvasapi.user import User
 from canvasapi.group import Group
+from canvasapi.course import Course
+from collections.abc import Iterator
 import logging
 import networkx as nx
 import os
@@ -225,6 +227,26 @@ def generate_ipr_history_spreadsheet(
         outfile.write(f"\n{delimiter.join(str(r) for r in record)}")
 
 
+
+
+def courses(canvas: Canvas, course_id: int = None) -> Iterator[Course]:
+    """Retrieve courses from a Canvas instance.
+
+    Args:
+        canvas (Canvas): Authenticated Canvas API instance.
+        course_id (int): Course ID filter.
+
+    Yields:
+        Iterator[Course]: Yields `Course` objects.
+    """
+    courses = canvas.get_courses()
+    for course in courses:
+        if hasattr(course, 'name'):
+            if course_id is not None:
+                if course.id == course_id:
+                    yield course
+            else:
+                yield course
 
 
 
