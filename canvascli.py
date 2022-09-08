@@ -143,14 +143,12 @@ def assignments(canvas, course_id, delimiter, sort_by):
     else:
         raise ValueError('sorting key not defined')
 
-    # Get course.
-    course = canvas.get_course(course_id)
-
     # Print students in sorted order.
     header_items = ['assignment id', 'assignment name']
     header = delimiter.join(header_items)
     print(header)
-    for assignment in course.get_assignments():
+    gen = mdetk.assignments(canvas=canvas, course_id=course_id)
+    for assignment in gen:
         print(f"{assignment.id}{delimiter}{assignment.name}")
 
 

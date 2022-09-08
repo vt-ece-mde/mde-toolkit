@@ -3,6 +3,7 @@
 This module contains functions that aid MDE course operation.
 """
 from canvasapi import Canvas
+from canvasapi.assignment import Assignment
 from canvasapi.user import User
 from canvasapi.group import Group
 from canvasapi.course import Course
@@ -305,6 +306,27 @@ def students(
 
     # Yield users enrolled as `student`.
     yield from course.get_users(enrollment_type=['student'])
+
+
+def assignments(
+    canvas: Canvas,
+    course_id: int,
+    ) -> Iterator[Assignment]:
+    """Retrieve assignments within a specific course from a Canvas instance.
+
+    Args:
+        canvas (Canvas): Authenticated Canvas API instance.
+        course_id (int): Course ID.
+
+    Yields:
+        Iterator[Assignment]: Yields Canvas `Assignment` objects.
+    """
+
+    # Get course from ID.
+    course = canvas.get_course(course_id)
+
+    # Yield assignments.
+    yield from course.get_assignments()
 
 
 
