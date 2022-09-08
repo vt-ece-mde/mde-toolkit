@@ -5,13 +5,15 @@
 
 <!-- Input form -->
 <div class="container-sm p-5">
-    <form action="{{ url_for('courses') }}" method="post" class="was-validated">
+    <h3>Filters</h3>
+    <form action="{{ url_for('courses') }}" method="get" class="needs-validation">
         <div class="mb-3 mt-3">
-            <label for="course_id" class="form-label">Course ID:</label>
-            <input type="text" class="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value="{{ request.form['course_id'] }}" required>
-            <div class="invalid-feedback">Cannot have empty course ID</div>
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">Course ID</span>
+                <input type="text" class="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value="{{ request.form['course_id'] }}">
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Get Courses</button>
     </form>
 </div>
 
@@ -19,22 +21,31 @@
 {% if courses %}
 <div class="container-fluid p-5">
     <h2>List of Courses</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Course ID</th>
-                <th>Course Name</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for course in courses %}
-            <tr>
-                <td>{{course.id}}</td>
-                <td>{{course.name}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <!-- Form to trigger download of content using previous query parameters -->
+    <form action="{{ url_for('courses') }}" method="get">
+        <input type="hidden" id="course_id" name="course_id" value="{{ request.form['course_id'] }}">
+        <input type="hidden" id="download" name="download" value="csv">
+        <button type="submit" class="btn btn-success">Download as CSV</button>
+    </form>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Course Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td>{{course.id}}</td>
+                    <td>{{course.name}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
