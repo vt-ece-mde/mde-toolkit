@@ -85,21 +85,15 @@ def groups(canvas, course_id, format, no_id):
     # Convert course ID to integer or parse from URL.
     course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
 
-    # Get course from ID.
-    course = canvas.get_course(course_id)
-
-    for group in course.get_groups():
-        group_name = group.name
-
-        # Format group name.
-        if format:
-            group_name = mdetk.format_group_name(group_name)
+    # Print groups based on any filtering.
+    gen = mdetk.groups(canvas=canvas, course_id=course_id, group_id=None, format=format)
+    for group in gen:
 
         # Remove ID from output.
         if no_id:
-            print(f"{group_name}")
+            print(f"{group.name}")
         else:
-            print(f"{group.id},{group_name}")
+            print(f"{group.id},{group.name}")
 
 
 @cli.command()

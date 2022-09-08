@@ -234,10 +234,10 @@ def courses(canvas: Canvas, course_id: int = None) -> Iterator[Course]:
 
     Args:
         canvas (Canvas): Authenticated Canvas API instance.
-        course_id (int): Course ID filter.
+        course_id (int, optional): Course ID filter. Defaults to None.
 
     Yields:
-        Iterator[Course]: Yields `Course` objects.
+        Iterator[Course]: Yields Canvas `Course` objects.
     """
     courses = canvas.get_courses()
     for course in courses:
@@ -247,6 +247,43 @@ def courses(canvas: Canvas, course_id: int = None) -> Iterator[Course]:
                     yield course
             else:
                 yield course
+
+
+def groups(
+    canvas: Canvas,
+    course_id: int,
+    group_id: int = None,
+    format: bool = False,
+    ) -> Iterator[Group]:
+    """Retrieve groups within a specific course from a Canvas instance.
+
+    Args:
+        canvas (Canvas): Authenticated Canvas API instance.
+        course_id (int): Course ID.
+        group_id (int, optional): Group ID filter. Defaults to None.
+        format (bool, optional): Flag to format the group name. Defaults to False.
+
+    Yields:
+        Iterator[Group]: Yields Canvas `Group` objects.
+    """
+
+    # Get course from ID.
+    course = canvas.get_course(course_id)
+
+    # Get groups.
+    for group in course.get_groups():
+
+        # Format group name.
+        if format:
+            group.name = format_group_name(group.name)
+
+        # Filter based on group ID.
+        if group_id is not None:
+            if group.id == group_id:
+                yield group
+        # Yield current group.
+        else:
+            yield group
 
 
 
