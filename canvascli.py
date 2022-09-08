@@ -107,8 +107,7 @@ def students(canvas, course_id, delimiter, sort_by):
     course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
 
     # Get course object and all student objects.
-    course = canvas.get_course(course_id)
-    students = [student for student in course.get_users(enrollment_type=['student'])]
+    students = list(mdetk.students(canvas=canvas, course_id=course_id))
 
     # Set sorting key.
     if sort_by == 'user_name':

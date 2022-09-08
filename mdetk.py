@@ -286,6 +286,28 @@ def groups(
             yield group
 
 
+def students(
+    canvas: Canvas,
+    course_id: int,
+    ) -> Iterator[User]:
+    """Retrieve users enrolled with the 'student' type within a specific course from a Canvas instance.
+
+    Args:
+        canvas (Canvas): Authenticated Canvas API instance.
+        course_id (int): Course ID.
+
+    Yields:
+        Iterator[User]: Yields Canvas `User` objects.
+    """
+
+    # Get course from ID.
+    course = canvas.get_course(course_id)
+
+    # Yield users enrolled as `student`.
+    yield from course.get_users(enrollment_type=['student'])
+
+
+
 
 ###
 # Drive architecture codebase.
