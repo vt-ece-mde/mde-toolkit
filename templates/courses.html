@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Courses</h1>
+
+<!-- Input form -->
+<div class="container-sm p-5">
+    <form action="{{ url_for('courses') }}" method="post" class="was-validated">
+        <div class="mb-3 mt-3">
+            <label for="course_id" class="form-label">Course ID:</label>
+            <input type="text" class="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value="{{ request.form['course_id'] }}" required>
+            <div class="invalid-feedback">Cannot have empty course ID</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<!-- Render content in table -->
+{% if courses %}
+<div class="container-fluid p-5">
+    <h2>List of Courses</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Course ID</th>
+                <th>Course Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr>
+                <td>{{course.id}}</td>
+                <td>{{course.name}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
