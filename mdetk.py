@@ -329,6 +329,29 @@ def assignments(
     yield from course.get_assignments()
 
 
+def assignment(
+    canvas: Canvas,
+    course_id: int,
+    assignment_id: int,
+    ) -> Assignment:
+    """Retrieve a specific assignment within a specific course from a Canvas instance.
+
+    Args:
+        canvas (Canvas): Authenticated Canvas API instance.
+        course_id (int): Course ID.
+        assignment_id (int): Assignment ID.
+
+    Yields:
+        Assignment: The Canvas `Assignment` object with the specified ID.
+    """
+
+    # Get course from ID.
+    course = canvas.get_course(course_id)
+
+    # Get assignment from ID.
+    return course.get_assignment(assignment_id)
+
+
 
 
 ###

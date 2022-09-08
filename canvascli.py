@@ -157,8 +157,7 @@ def assignments(canvas, course_id, delimiter, sort_by):
 @click.option('--assignment-id', '-a', required=True, type=int)
 @pass_canvas
 def assignment(canvas, course_id, assignment_id):
-    course = canvas.get_course(course_id)
-    assignment = course.get_assignment(assignment_id)
+    assignment = mdetk.assignment(canvas=canvas, course_id=course_id, assignment_id=assignment_id)
     print(assignment.submissions_download_url)
 
 
