@@ -2,7 +2,10 @@ version: '3'
 services:
   web:
     build: ./
-    command: gunicorn wsgi:app --bind 0.0.0.0:8080 --workers=4 --reload
+    ### Use gunicorn for deployment.
+    # command: gunicorn wsgi:app --bind 0.0.0.0:8080 --workers=4 --reload
+    ### Use flask server for development.
+    command: flask --app wsgi --debug run --host 0.0.0.0 --port 8080
     volumes:
       - ./:/home/appuser/
     ports:
