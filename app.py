@@ -45,9 +45,6 @@ def courses():
 
     courses = None
     course_id = None
-    print(f"{request=}", flush=True)
-    print(f"{request.args=}", flush=True)
-
     if request.method == 'GET':
 
         # Only get data if query is provided.
@@ -65,7 +62,6 @@ def courses():
                     for course in courses:
                         f.write(f"{course.id},{course.name}\n")
                     f.seek(0)
-                    print(f"{f.name=}", flush=True)
                     return send_file(f.name, as_attachment=True, download_name='courses.csv')
 
 
