@@ -2,6 +2,7 @@ from canvasapi import Canvas
 from fastapi import Depends, FastAPI
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import json
+from . import mdetk
 import os
 
 api = FastAPI()
@@ -30,10 +31,16 @@ async def root():
 
 
 @api.get("/courses")
-async def courses(canvas: Canvas = Depends(get_canvas_instance)):
-    ret = [
-        {"name": c.name, "id": c.id} 
-        for c in canvas.get_courses()
-        if hasattr(c, 'name')
-    ]
+async def courses(
+    canvas: Canvas = Depends(get_canvas_instance),
+    course_id: str = None,
+    ):
+
+    # Obtain list of courses using optional ID filter.
+    if course_id is not None:
+        course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+    courses = mdetk.courses(canvas=canvas, course_id=course_id)
+
+    # Build list of courses.
+    ret = [{"name": c.name, "id": c.id} for c in courses]
     return ret
