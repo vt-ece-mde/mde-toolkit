@@ -37,7 +37,7 @@ def home():
 @app.route('/courses', methods=['GET'])
 def courses():
 
-    CANVAS_API_URL = 'https://canvas.vt.edu'
+    CANVAS_API_URL = os.getenv('CANVAS_API_TOKEN', 'https://canvas.vt.edu')
     CANVAS_API_TOKEN = os.getenv('CANVAS_API_TOKEN')
     print(f"{CANVAS_API_URL=}")
     print(f"{CANVAS_API_TOKEN=}")
@@ -66,3 +66,11 @@ def courses():
 
 
     return render_template('courses.html', courses=courses, course_id=course_id)
+
+
+@app.route('/ipr-history-spreadsheet', methods=['GET'])
+def ipr_history_spreadsheet():
+
+    CANVAS_API_URL = os.getenv('CANVAS_API_TOKEN', 'https://canvas.vt.edu')
+    CANVAS_API_TOKEN = os.getenv('CANVAS_API_TOKEN')
+    canvas = Canvas(CANVAS_API_URL, CANVAS_API_TOKEN)

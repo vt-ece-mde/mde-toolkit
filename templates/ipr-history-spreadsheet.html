@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>IPR History</h1>
+
+<!-- Input form -->
+<div class="container-sm p-5">
+    <h3>Filters</h3>
+    <form action="{{ url_for('ipr-history-spreadsheet') }}" method="get" class="needs-validation">
+        <div class="mb-3 mt-3">
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">Course ID</span>
+                <input type="text" class="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value="{{ request.form['course_id'] }}">
+            </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">Assignment ID</span>
+                <input type="text" class="form-control" id="assignment_id" placeholder="Enter either a URL or an integer value" name="assignment_id" value="{{ request.form['assignment_id'] }}">
+            </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">Number of Feedback Rounds</span>
+                <input type="text" class="form-control" id="n_feedback" placeholder="Enter either a URL or an integer value" name="n_feedback" value="{{ request.form['n_feedback'] }}">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Get IPR History</button>
+    </form>
+</div>
+
+<!-- Render content in table -->
+{% if courses %}
+<div class="container-fluid p-5">
+    <h2>IPR History Spreadsheet</h2>
+
+    <!-- Form to trigger download of content using previous query parameters -->
+    <form action="{{ url_for('ipr-history-spreadsheet') }}" method="get">
+        <input type="hidden" id="course_id" name="course_id" value="{{ request.form['course_id'] }}">
+        <input type="hidden" id="assignment_id" name="assignment_id" value="{{ request.form['assignment_id'] }}">
+        <input type="hidden" id="n_feedback" name="n_feedback" value="{{ request.form['n_feedback'] }}">
+        <input type="hidden" id="download" name="download" value="csv">
+        <button type="submit" class="btn btn-success">Download as CSV</button>
+    </form>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Course Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td>{{course.id}}</td>
+                    <td>{{course.name}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
