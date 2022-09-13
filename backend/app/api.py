@@ -1,5 +1,5 @@
 from canvasapi import Canvas
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import json
 from . import mdetk
@@ -8,6 +8,7 @@ import os
 api = FastAPI()
 
 auth_scheme = HTTPBearer()
+
 
 async def get_canvas_instance(
     credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),
@@ -34,7 +35,7 @@ async def root():
 async def courses(
     canvas: Canvas = Depends(get_canvas_instance),
     course_id: str = None,
-    ):
+    ) -> list[dict]:
 
     # Obtain list of courses using optional ID filter.
     if course_id is not None:
@@ -43,4 +44,31 @@ async def courses(
 
     # Build list of courses.
     ret = [{"name": c.name, "id": c.id} for c in courses]
+    return ret
+
+
+@api.get("/courses/{course_id}/groups")
+async def groups(
+    course_id: str,
+    canvas: Canvas = Depends(get_canvas_instance),
+    group_id: str = None,
+    format: bool = False,
+    ) -> list[dict]:
+
+    # Obtain list of courses using optional ID filter.
+    if course_id is not None:
+        course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+    if group_id is not None:
+        group_id = mdetk.parse_value_or_url(group_id, int, 'groups')
+    
+    # Get generator of groups.
+    gen = mdetk.groups(
+        canvas=canvas,
+        course_id=course_id,
+        group_id=group_id,
+        format=format,
+    )
+
+    # Build list of groups.
+    ret = [{"name": g.name, "id": g.id} for g in gen]
     return ret
