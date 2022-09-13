@@ -1,5 +1,12 @@
 version: '3'
 services:
+  backend:
+    build: ./backend
+    command: python asgi.py
+    volumes:
+      - ./backend:/home/appuser/
+    ports:
+      - 8080:8080
   web:
     build: ./
     ### Use gunicorn for deployment.

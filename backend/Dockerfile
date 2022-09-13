@@ -43,4 +43,5 @@ USER appuser
 # Install application into container.
 COPY . .
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
+# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--worker-class uvicorn.workers.UvicornWorker", "app.api:api"]
