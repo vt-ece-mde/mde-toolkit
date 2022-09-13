@@ -12,6 +12,7 @@ numpy = "*"
 networkx = "*"
 flask = "*"
 gunicorn = "*"
+fastapi = {extras = ["all"], version = "*"}
 
 [dev-packages]
 matplotlib = "*"
