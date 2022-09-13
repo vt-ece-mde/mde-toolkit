@@ -72,3 +72,30 @@ async def groups(
     # Build list of groups.
     ret = [{"name": g.name, "id": g.id} for g in gen]
     return ret
+
+
+@api.get("/courses/{course_id}/students")
+async def students(
+    course_id: str,
+    canvas: Canvas = Depends(get_canvas_instance),
+    ) -> list[dict]:
+
+    # Obtain list of courses using optional ID filter.
+    if course_id is not None:
+        course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+
+    # Get course from ID.
+    course = canvas.get_course(course_id)
+    
+    # Get generator of groups.
+    gen = course.get_users(enrollment_type=['student'])
+
+    # Build list of groups.
+    ret = [
+        {
+            "name": user.name,
+            "sortable_name": user.sortable_name,
+            "id": user.id,
+        } for user in gen
+        ]
+    return ret
