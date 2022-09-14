@@ -1,11 +1,21 @@
 from canvasapi import Canvas
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.middleware.cors import CORSMiddleware
 import json
 from . import mdetk
 import os
 
 api = FastAPI()
+
+# Allow API server to be accessible on different hostnames (e.g., Docker containers).
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 auth_scheme = HTTPBearer()
 
@@ -29,6 +39,11 @@ async def get_canvas_instance(
 @api.get("/")
 async def root():
     return {"message": "Hello World!"}
+
+
+@api.get("/test")
+async def test():
+    return {"message": "This is a test"}
 
 
 @api.get("/courses")
