@@ -38,8 +38,32 @@ export default function Courses() {
     const [courseList, setCourseList] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(false);
 
+    /**
+     * Download the current course contents as a CSV file.
+     */
+    const download_as_csv = async () => {
+
+        // File contents.
+        var csv: string[] = courseList.map((course) => `${course.id},${course.name}`);
+
+        // Header.
+        csv.unshift("course_id,course_name");
+
+        // Convert to string.
+        const csv_string = csv.join("\n");
+
+        const element = document.createElement("a");
+        const file = new Blob([csv_string], {type: 'text/plain'});
+        element.href = URL.createObjectURL(file);
+        element.download = "courses.csv"; // Name of file.
+        document.body.appendChild(element); // Required for this to work in FireFox
+        element.click();
+    }
 
 
+    /**
+     * Async form submission callback.
+     */
     const submitForm = async (event: FormEvent) => {
         event.preventDefault();
         setIsFetching(true);
@@ -63,8 +87,8 @@ export default function Courses() {
         // alert(`Got: ${JSON.stringify(result)}`);
     }
 
-    console.log(`isFetching=${isFetching}, ${typeof isFetching}`)
 
+    // Loading view.
     if (isFetching === true) {
         console.log('HERE 1')
         return (
@@ -79,6 +103,8 @@ export default function Courses() {
             </div>
         );
     } 
+
+    // No courses listed, not loading.
     else if (courseList === undefined || courseList.length === 0) {
         console.log('HERE 2')
         return (
@@ -90,6 +116,8 @@ export default function Courses() {
             </div>
         );
     }
+
+    // Courses to display, loading complete.
     else {
         console.log('HERE 3')
         return (
@@ -100,6 +128,9 @@ export default function Courses() {
             </div>
             <div className="container-fluid p-5">
                 <h2>List of Courses</h2>
+                <div>
+                    <button className="btn btn-success" onClick={ download_as_csv }>Download as CSV</button>
+                </div>
                 <div className="table-responsive">
                     <table className="table table-striped">
                         <thead>
