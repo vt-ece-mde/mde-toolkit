@@ -11,6 +11,7 @@ const NAVBAR_TITLE = "MDE Toolkit";
 const NAVBAR_MENU_LIST = [
     { text: "Home", href: "/" },
     { text: "Courses", href: "/courses" },
+    { text: "Students", href: "/students" },
 ];
 
 function MyApp({ Component, pageProps }: AppProps) {
