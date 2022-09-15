@@ -12,6 +12,7 @@ const NAVBAR_MENU_LIST = [
     { text: "Home", href: "/" },
     { text: "Courses", href: "/courses" },
     { text: "Students", href: "/students" },
+    { text: "IPR History Spreadsheet", href: "/ipr-history-spreadsheet" },
 ];
 
 function MyApp({ Component, pageProps }: AppProps) {
