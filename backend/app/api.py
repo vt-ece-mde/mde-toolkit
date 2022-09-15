@@ -1,5 +1,5 @@
 from canvasapi import Canvas
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -114,3 +114,50 @@ async def students(
         } for user in gen
         ]
     return ret
+
+
+@api.get("/courses/{course_id}/ipr-history-spreadsheet")
+async def ipr_history_spreadsheet(
+    course_id: str,
+    n_feedback: int,
+    assignment_id: list[int] = Query(), # Using `Query()` is required here to recognize the list type.
+    delimiter: str = '|',
+    sort_key: str = 'group_name',
+    canvas: Canvas = Depends(get_canvas_instance),
+    ) -> list[dict]:
+
+    # Obtain list of courses using optional ID filter.
+    course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+
+    # Convert assignment IDs to integer or parse from URL.
+    assignment_id = [
+        mdetk.parse_value_or_url(aid, int, 'assignments') for aid in assignment_id
+    ]
+
+    gen = mdetk.generate_ipr_history_spreadsheet(
+        canvas=canvas,
+        course_id=course_id,
+        assignment_id=assignment_id,
+        n_feedback=n_feedback,
+        delimiter=delimiter,
+        sort_key=sort_key,
+        # outfile=sys.stdout,
+    )
+    return list(gen)
+
+
+    # # Get course from ID.
+    # course = canvas.get_course(course_id)
+    
+    # # Get generator of groups.
+    # gen = course.get_users(enrollment_type=['student'])
+
+    # # Build list of groups.
+    # ret = [
+    #     {
+    #         "name": user.name,
+    #         "sortable_name": user.sortable_name,
+    #         "id": user.id,
+    #     } for user in gen
+    #     ]
+    # return ret
