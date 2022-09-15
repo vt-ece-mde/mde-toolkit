@@ -143,18 +143,16 @@ def generate_ipr_history_spreadsheet(
     canvas: Canvas,
     course_id: int,
     assignment_id: int|list[int], # List of assignment IDs for URL linking.
-    outfile: TextIO,
     n_feedback: int, # Number of IPR feedback rounds.
     delimiter: str = ',',
     sort_key: str = 'group_name',
-    ):
+    ) -> Iterator[list[str]]:
     """Generates a CSV-like IPR history spreadsheet template.
 
     Args:
         canvas (Canvas): Canvas API object.
         course_id (int): Course ID number.
         assignment_id (int | list[int]): Assignment IDs for URL construction.
-        outfile (TextIO): Output file-like object.
         n_feedback (int): Number of desired IPR feedback rounds.
         sort_key (str, optional): Denotes how records should be sorted (i.e., by "user_name", "group_name"). Defaults to 'group_name'.
     """
@@ -202,8 +200,7 @@ def generate_ipr_history_spreadsheet(
     header_items.extend(cols_url)
 
     # Write the header to the file.
-    header = delimiter.join(header_items)
-    outfile.write(header)
+    yield header_items
 
     # Write the user information to the file.
     for uid in uids:
@@ -224,8 +221,7 @@ def generate_ipr_history_spreadsheet(
         ]
         record.extend(urls)
 
-        # Write records to file
-        outfile.write(f"\n{delimiter.join(str(r) for r in record)}")
+        yield record
 
 
 
