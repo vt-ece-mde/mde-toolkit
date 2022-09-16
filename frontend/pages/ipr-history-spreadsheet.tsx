@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import Link from "next/link";
 
 import getConfig from 'next/config';
@@ -11,29 +11,102 @@ console.log(`API_URI: ${JSON.stringify(API_URI)}`)
 console.log(`CANVAS_API_TOKEN=${CANVAS_API_TOKEN}`)
 
 
-type FormProps = {
-    course_id?: string;
-    n_feedback?: number;
-    assignment_id?: number;
-    onSubmit?(event: FormEvent): void;
+type FormData = {
+    course_id: string;
+    n_feedback: string;
+    assignment_ids: string[];
 }
 
-function Form(props: FormProps) {
+type FormProps = {
+    data?: FormData;
+    onSubmit(data: FormData, event: FormEvent): void;
+}
+
+function Form({ data, onSubmit }: FormProps) {
+
+    // const [formData, setFormData] = useState<FormData>({...data})
+    const [formData, setFormData] = useState<FormData>({
+        course_id: "",
+        n_feedback: "",
+        assignment_ids: [""],
+        ...data,
+    });
+
+    const handleCourseIdChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            course_id: event.target.value,
+        });
+    }
+
+    const handleNumFeedbackChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            n_feedback: event.target.value,
+        });
+    }
+
+
+    const handleAssignmentIdChange = (index: number, event: ChangeEvent<HTMLInputElement>) => {
+        // console.log(`changing assignment ID: ${index} to "${event.target.value}"`);
+
+        let items = [...formData.assignment_ids];
+        items[index] = event.target.value; // Update the desired index.
+
+        setFormData({
+            ...formData,
+            assignment_ids: items,
+        });
+    }
+
+    const addAssignmentId = () => {
+        setFormData({
+            ...formData,
+            assignment_ids: [...formData.assignment_ids, ""],
+        });
+    }
+
+    const removeAssignmnetId = (index: number) => {
+        let items = [...formData.assignment_ids];
+        items.splice(index, 1); // Remove the `index` element.
+        setFormData({
+            ...formData,
+            assignment_ids: items,
+        });
+    }
+
+    const renderAssignmentIdElement = (index: number): any => {
+        return (
+            <div className="input-group mb-3" key={index}>
+                <span className="input-group-text">Assignment ID</span>
+                <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="assignment_id" value={ formData.assignment_ids[index] } onChange={(event) => handleAssignmentIdChange(index, event)} required />
+                {
+                    (formData.assignment_ids.length > 1) ? (
+                        <button className="btn btn-danger" onClick={() => removeAssignmnetId(index)}>delete</button>
+                    ) : null
+                }
+                {
+                    index === formData.assignment_ids.length-1 ? (
+                        <button className="btn btn-success" onClick={() => addAssignmentId()}>add</button>
+                    ) : null
+                }
+            </div>
+        );
+    }
+
+
     return (
-        <form className="needs-validation" onSubmit={ props.onSubmit }>
+        <form className="needs-validation" onSubmit={ (e) => onSubmit(formData, e) }>
         <div className="mb-3 mt-3">
             <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <input type="text" className="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value={ props.course_id } required />
+                <span className="input-group-text">Course ID</span>
+                <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="course_id" value={ formData.course_id } onChange={handleCourseIdChange} required />
             </div>
             <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1"># Feedback</span>
-                <input type="text" className="form-control" id="n_feedback" placeholder="Enter either a URL or an integer value" name="n_feedback" value={ props.n_feedback } required />
+                <span className="input-group-text"># Feedback Rounds</span>
+                <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="n_feedback" value={ formData.n_feedback } onChange={handleNumFeedbackChange} required />
             </div>
-            <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1">Assignment ID</span>
-                <input type="text" className="form-control" id="assignment_id" placeholder="Enter either a URL or an integer value" name="assignment_id" value={ props.assignment_id } required />
-            </div>
+            {formData.assignment_ids.map((_, index) => renderAssignmentIdElement(index))}
         </div>
         <button type="submit" className="btn btn-primary">Create Spreadsheet</button>
     </form>
@@ -51,7 +124,6 @@ const isURL = (s: string) => {
 
 export default function IprHistorySpreadsheet() {
     
-    // State variables.
     const [contentList, setContentList] = useState<string[][]>([]);
     const [isFetching, setIsFetching] = useState(false);
 
@@ -79,20 +151,25 @@ export default function IprHistorySpreadsheet() {
         element.click();
     }
 
-    const submitForm = async (event: FormEvent) => {
+    const submitForm = async (data: FormData, event: FormEvent) => {
         event.preventDefault();
+        
+        // setFormData(data);
+        
         setIsFetching(true);
 
-        // Re-cast the target as the appropriate type.
-        const target = event.target as HTMLFormElement
-        console.log(`course_id=${target.course_id.value}`);
+        // // Re-cast the target as the appropriate type.
+        // const target = event.target as HTMLFormElement
+        // console.log(`course_id=${target.course_id.value}`);
+
+        console.log(JSON.stringify(data));
 
         // Make API call.
-        const res = await fetch(`${API_URI}/courses/${target.course_id.value}/ipr-history-spreadsheet?` + new URLSearchParams({
-            course_id: target.course_id.value,
-            n_feedback: target.n_feedback.value,
-            assignment_id: target.assignment_id.value,
-        }), {
+        const res = await fetch(`${API_URI}/courses/${data.course_id}/ipr-history-spreadsheet?` + new URLSearchParams([
+            ['course_id', data.course_id],
+            ['n_feedback', data.n_feedback],
+            ...data.assignment_ids.map(s => ['assignment_id', s]),
+        ]), {
             headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
         })
         const contentList = await res.json();
@@ -107,7 +184,7 @@ export default function IprHistorySpreadsheet() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form onSubmit={ submitForm } />
             </div>
             <div className="container-fluid p-5">
                 <h3>Loading...</h3>
@@ -121,7 +198,7 @@ export default function IprHistorySpreadsheet() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form onSubmit={ submitForm } />
             </div>
             </>
         );
@@ -132,7 +209,7 @@ export default function IprHistorySpreadsheet() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form onSubmit={ submitForm } />
             </div>
             <div className="container-fluid p-5">
                 <h2>IPR History Spreadsheet</h2>
