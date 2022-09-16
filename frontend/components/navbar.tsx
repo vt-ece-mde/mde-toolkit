@@ -16,8 +16,8 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
                     </button>
                     <div className="collapse navbar-collapse" id="navbarNavDropdown">
                         <ul className="navbar-nav">
-                            {menu_list.map((item) => {
-                                return <NavItem active={false} {...item}/>;
+                            {menu_list.map((item, index) => {
+                                return <NavItem active={false} {...item} key={index}/>;
                             })}
                         </ul>
                     </div>
