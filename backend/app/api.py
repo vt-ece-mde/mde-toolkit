@@ -120,7 +120,7 @@ async def students(
 async def ipr_history_spreadsheet(
     course_id: str,
     n_feedback: int,
-    assignment_id: list[int] = Query(), # Using `Query()` is required here to recognize the list type.
+    assignment_id: list[str] = Query(), # Using `Query()` is required here to recognize the list type.
     delimiter: str = '|',
     sort_key: str = 'group_name',
     canvas: Canvas = Depends(get_canvas_instance),
@@ -133,6 +133,10 @@ async def ipr_history_spreadsheet(
     assignment_id = [
         mdetk.parse_value_or_url(aid, int, 'assignments') for aid in assignment_id
     ]
+
+    print(f"{course_id=}")
+    print(f"{n_feedback=}")
+    print(f"{assignment_id=}")
 
     gen = mdetk.generate_ipr_history_spreadsheet(
         canvas=canvas,
