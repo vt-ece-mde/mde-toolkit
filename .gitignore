@@ -1,3 +1,6 @@
+# Database data.
+db/data/
+
 # macOS files.
 .DS_Store
 Icon?

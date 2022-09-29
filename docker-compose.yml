@@ -1,12 +1,16 @@
 version: '3'
 services:
+
+  # Webapp back-end server.
   backend:
     build: ./backend
     command: python asgi.py
     volumes:
       - ./backend:/home/appuser/
     ports:
-      - 8080:8080
+      - 3030:8080
+
+  # Webapp front-end client.
   frontend:
     build: ./frontend
     command: npm run dev
@@ -16,8 +20,37 @@ services:
       - 3000:3000
     environment:
       - API_SERVER_HOST=backend
-      - API_SERVER_PORT=8080
+      - API_SERVER_PORT=3030
       - CANVAS_API_TOKEN
+      - PGSQL_USER=root
+      - PGSQL_PASSWORD=root
+      - PGSQL_HOST=db
+      - PGSQL_PORT=5432
+      - PGSQL_DATABASE=db
+
+  # Database.
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=mde
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+
+  # Database management tool.
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - 8080:80
+
   # web:
   #   build: ./
   #   ### Use gunicorn for deployment.
