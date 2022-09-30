@@ -39,7 +39,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./db/data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
 
   # Database management tool.
   pgadmin:
@@ -50,6 +50,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: root
     ports:
       - 8080:80
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
 
   # web:
   #   build: ./
