@@ -1,10 +1,17 @@
+from urllib import response
 from canvasapi import Canvas
 from fastapi import Depends, FastAPI, Request, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import FileResponse
+from starlette.background import BackgroundTask
 import json
 from . import mdetk
 import os
+from pathlib import Path
+import shutil
+import tempfile
+import zipfile
 
 api = FastAPI()
 
@@ -165,3 +172,62 @@ async def ipr_history_spreadsheet(
     #     } for user in gen
     #     ]
     # return ret
+
+
+def remove_dir(path: str|Path):
+    """Helper to remove a directory tree."""
+    shutil.rmtree(path)
+
+
+@api.get('/courses/{course_id}/expo/team-dirs')
+async def create_expo_team_dirs(
+    course_id: str,
+    canvas: Canvas = Depends(get_canvas_instance),
+    type: str = None, # Zip or JSON
+    ):
+    """Creates team directories and sends as either a zip archive (default) or a JSON blob."""
+
+    # Obtain list of courses using optional ID filter.
+    course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+
+    # Temporary directory.
+    tmpdir = tempfile.mkdtemp()
+
+    # Create a base path.
+    tmpdir_path = Path(tmpdir)
+
+    # Create zip archive of temporary directory.
+    zipname_base = f'{course_id}_expo_team_dirs'
+    zipname_base_path = Path(zipname_base)
+    zipped_filename = f'{zipname_base}.zip'
+    zipped_path = tmpdir_path/zipped_filename
+    with zipfile.ZipFile(zipped_path, 'w') as zf:
+
+        # Create directory for each group.
+        gen = mdetk.groups(
+            canvas=canvas,
+            course_id=course_id,
+            group_id=None,
+            format=False,
+        )
+        for group in gen:
+            formatted_group_name = mdetk.format_group_name(group.name)
+            p = tmpdir_path/zipname_base_path/formatted_group_name
+            p.mkdir(parents=True, exist_ok=True)
+
+            # Add to zip archive.
+            arcname = zipname_base_path/formatted_group_name
+            zf.write(p, arcname=arcname)
+
+    # Send zip archive.
+    if type is None or type.lower() == 'zip':
+        response = FileResponse(zipped_path,
+            media_type="application/x-zip-compressed",
+            filename=zipped_filename,
+            background=BackgroundTask(shutil.rmtree, tmpdir),
+        )
+        return response
+
+    # Send JSON blob.
+    elif type.lower() == 'json':
+        return [f.filename for f in zf.filelist]
