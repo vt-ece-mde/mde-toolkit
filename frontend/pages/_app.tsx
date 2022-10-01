@@ -13,6 +13,7 @@ const NAVBAR_MENU_LIST = [
     { text: "Courses", href: "/courses" },
     { text: "Students", href: "/students" },
     { text: "IPR History Spreadsheet", href: "/ipr-history-spreadsheet" },
+    { text: "Expo Team Dirs", href: "/expo/team-dirs" },
 ];
 
 function MyApp({ Component, pageProps }: AppProps) {
