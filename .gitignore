@@ -1,6 +1,8 @@
 # Database data.
 data/
 
+.bash_history
+
 # macOS files.
 .DS_Store
 Icon?
