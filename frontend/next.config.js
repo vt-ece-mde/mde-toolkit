@@ -5,7 +5,7 @@ const nextConfig = {
   serverRuntimeConfig: {
     // Will only be available on the server side
     // URI: 'your-docker-uri:port'
-    API_URI: `${process.env.API_SERVER_HOST}:${process.env.API_SERVER_PORT}`,
+    API_URI: `http://${process.env.API_SERVER_HOST}:${process.env.API_SERVER_PORT}`,
     CANVAS_API_TOKEN: process.env.CANVAS_API_TOKEN,
   },
   publicRuntimeConfig: {
