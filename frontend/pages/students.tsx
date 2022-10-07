@@ -1,3 +1,5 @@
+import { fetch_courses, fetch_users } from "../lib/canvas";
+
 import { FormEvent, useState } from "react";
 
 import getConfig from 'next/config';
@@ -9,28 +11,67 @@ console.log(`publicRuntimeConfig: ${JSON.stringify(publicRuntimeConfig)}`)
 console.log(`API_URI: ${JSON.stringify(API_URI)}`)
 console.log(`CANVAS_API_TOKEN=${CANVAS_API_TOKEN}`)
 
+type FormData = {
+    course_index: number;
+}
 
 type FormProps = {
-    course_id?: string;
-    onSubmit?(event: FormEvent): void;
+    course_list: any[];
+    onSubmit(data: FormData): void;
 }
 
 function Form(props: FormProps) {
+
+    // State for current course index.
+    const [courseIndex, setCourseIndex] = useState(-1);
+
+    // Handle form event and pass data object to callback.
+    const onSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        props.onSubmit({
+            course_index: courseIndex,
+        })
+    }
+
     return (
-        <form className="needs-validation" onSubmit={ props.onSubmit }>
+        <form className="needs-validation" onSubmit={ onSubmit }>
         <div className="mb-3 mt-3">
             <div className="input-group mb-3">
                 <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <input type="text" className="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value={ props.course_id } required />
+                <select className="custom-select" id="course_selector" onChange={e => setCourseIndex(Number(e.target.value))}>
+                    <option value={-1}>Select a course</option>
+                    {props.course_list.map((course, index) => {
+                        if (course.name.includes("4805") || course.name.includes("4806")) {
+                            return (<option value={ index } key={ index }>{ course.name }</option>);
+                        }
+                    })}
+                </select>
             </div>
         </div>
-        <button type="submit" className="btn btn-primary">Get Students</button>
+        <button type="submit" className="btn btn-primary" disabled={ !(courseIndex >= 0) }>Get Students</button>
     </form>
     );
 }
 
 
-export default function Students() {
+
+export async function getServerSideProps() {
+    // Fetch course list.
+    // Filter out courses that do not have a `name` attribute.
+    var course_list = await (await fetch_courses()).filter(c => 'name' in c);
+
+    // Create component props and return.
+    const props: StudentsProps = {
+        course_list: course_list,
+    }
+    return { props: props }
+}
+
+type StudentsProps = {
+    course_list: any[];
+}
+
+export default function Students({ course_list }: StudentsProps) {
     
     // State variables.
     const [studentList, setStudentList] = useState<any[]>([]);
@@ -59,21 +100,17 @@ export default function Students() {
         element.click();
     }
 
-    const submitForm = async (event: FormEvent) => {
-        event.preventDefault();
+    // const submitForm = async (event: FormEvent) => {
+    const submitForm = async (data: FormData) => {
         setIsFetching(true);
 
-        // Re-cast the target as the appropriate type.
-        const target = event.target as HTMLFormElement
-        console.log(`course_id=${target.course_id.value}`);
+        const course_id = course_list[data.course_index].id;
 
-        // Make API call.
-        const res = await fetch(`${API_URI}/courses/${target.course_id.value}/students`, {
-            headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
-        })
-        const studentList = await res.json();
-        console.log(JSON.stringify(studentList));
-        setStudentList(studentList);
+        // Get list of users.
+        const user_list = await fetch_users(course_id);
+        console.log(JSON.stringify(user_list));
+
+        setStudentList(user_list);
         setIsFetching(false);
     }
 
@@ -83,10 +120,14 @@ export default function Students() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form course_list={ course_list } onSubmit={ submitForm }/>
             </div>
             <div className="container-fluid p-5">
-                <h3>Loading...</h3>
+                {/* <h3>Loading...</h3> */}
+                <div className="spinner-border" role="status">
+                    {/* <span className="sr-only">Loading...</span> */}
+                    <span>Loading...</span>
+                </div>
             </div>
             </>
         );
@@ -97,7 +138,7 @@ export default function Students() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form course_list={ course_list } onSubmit={ submitForm }/>
             </div>
             </>
         );
@@ -108,7 +149,7 @@ export default function Students() {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form onSubmit={ submitForm }/>
+                <Form course_list={ course_list } onSubmit={ submitForm }/>
             </div>
             <div className="container-fluid p-5">
                 <h2>List of Students</h2>
