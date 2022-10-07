@@ -123,10 +123,8 @@ export default function Students({ course_list }: StudentsProps) {
                 <Form course_list={ course_list } onSubmit={ submitForm }/>
             </div>
             <div className="container-fluid p-5">
-                {/* <h3>Loading...</h3> */}
                 <div className="spinner-border" role="status">
-                    {/* <span className="sr-only">Loading...</span> */}
-                    <span>Loading...</span>
+                    <span className="sr-only">Loading...</span>
                 </div>
             </div>
             </>
@@ -152,7 +150,7 @@ export default function Students({ course_list }: StudentsProps) {
                 <Form course_list={ course_list } onSubmit={ submitForm }/>
             </div>
             <div className="container-fluid p-5">
-                <h2>List of Students</h2>
+                <h2>List of Students ({ studentList.length })</h2>
                 <div>
                     <button className="btn btn-success" onClick={ download_as_csv }>Download as CSV</button>
                 </div>
