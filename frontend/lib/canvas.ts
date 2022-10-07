@@ -12,21 +12,58 @@ console.log(`CANVAS_BASE_URL="${CANVAS_BASE_URL}"`)
 
 import parseLinkHeader from 'parse-link-header';
 
+/**
+ * Helper to flatten an object (containing REST API query parameters)
+ * into a format that is readable by `URLSearchParameters()`.
+ * @param kwargs Object with keys and values.
+ * @returns Array of two-element arrays of type [string, any].
+ */
+const flatten_kwargs = (kwargs: object): [string, any][] => {
+    var l: [string, any][] = [];
+    Object.entries(kwargs).forEach(([key, value]) => {
+        // Array items.
+        if (Array.isArray(value)) {
+            l.push(...(<[string, any][]> value.map(v => [`${key}[]`, v]))); // Cast to type.
+        }
+        else if (typeof value === 'object') {
+            l.push(...flatten_kwargs(value))
+        }
+        // Numbers, strings, etc.
+        else {
+            l.push([key, value]);
+        }
+    });
+    return l;
+}
+
+/**
+ * Fetch from a paginated REST API endpoint.
+ * @param url URL to fetch.
+ * @param init Fetch init object (passed directly to `fetch()`).
+ * @param page Page number (defaults to `1`).
+ * @param previous_response The previous response list.
+ * @returns Promise to list of objects.
+ */
 const paginated_fetch = async (url: string, init: any, page: number = 1, previous_response: any[] = []): Promise<any[]> => {
-    const res = await fetch(`${url}?page=${page}&per_page=${100}`, init);
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}page=${page}&per_page=${100}`, init);
     const link_headers = parseLinkHeader(res.headers.get('Link'));
     const json = await res.json();
     const all_response = [...previous_response, ...json]
-    if ((link_headers !== null) && (typeof link_headers.current !== 'undefined') && (typeof link_headers.last !== 'undefined') && (link_headers.current.url !== link_headers.last.url)) {
+    if ((link_headers !== null) && (typeof link_headers.current !== 'undefined') && (typeof link_headers.next !== 'undefined')) {
         page++;
         console.log(`fetching next page: ${link_headers.next.url}`);
-        return paginated_fetch(link_headers.next.url, init, page, all_response);
+        return paginated_fetch(url, init, page, all_response);
     } else {
+        console.log(`link_headers: ${JSON.stringify(link_headers)}`);
         console.log(`complete: ${page} pages, ${all_response.length} items`);
         return all_response;
     }
 }
 
+/**
+ * Get list of courses.
+ * @returns Promise to list of course objects.
+ */
 export const fetch_courses = async (): Promise<any[]> => {
     const json = await paginated_fetch(`${CANVAS_BASE_URL}/courses`, {
         headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
@@ -34,6 +71,12 @@ export const fetch_courses = async (): Promise<any[]> => {
     return json;
 }
 
+
+/**
+ * Get course object by ID.
+ * @param course_id Course ID number.
+ * @returns Promise to course object.
+ */
 export const fetch_course = async (course_id: number|string): Promise<any> => {
     // Fetch JSON course.
     const res = await fetch(`${CANVAS_BASE_URL}/courses/${course_id}`, {
@@ -44,9 +87,26 @@ export const fetch_course = async (course_id: number|string): Promise<any> => {
 }
 
 
-export const fetch_users = async (course_id: string): Promise<any[]> => {
+/**
+ * Get list of user objects.
+ * For query arguments see: https://canvas.instructure.com/doc/api/courses.html#method.courses.search_users
+ * @param course_id Course ID number.
+ * @param kwargs Canvas API query arguments.
+ * @returns Promise to list of user objects.
+ */
+export const fetch_users = async (course_id: string, kwargs?: object): Promise<any[]> => {
+
+    // Create base URL.
+    var url = `${CANVAS_BASE_URL}/courses/${course_id}/search_users`
+
+    // Add query parameters.
+    if (typeof kwargs !== 'undefined') {
+        const params = new URLSearchParams(flatten_kwargs(kwargs));
+        url = `${url}?${params}`;
+    }
+
     // Fetch JSON list of users.
-    const json = await paginated_fetch(`${CANVAS_BASE_URL}/courses/${course_id}/search_users`, {
+    const json = await paginated_fetch(url, {
         headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
     })
     return json;
