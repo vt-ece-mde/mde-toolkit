@@ -44,15 +44,21 @@ const flatten_kwargs = (kwargs: object): [string, any][] => {
  * @param previous_response The previous response list.
  * @returns Promise to list of objects.
  */
-const paginated_fetch = async (url: string, init: any, page: number = 1, previous_response: any[] = []): Promise<any[]> => {
-    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}page=${page}&per_page=${100}`, init);
+const paginated_fetch = async (
+    url: string,
+    init: any,
+    page: number = 1,
+    per_page: number = 100,
+    previous_response: any[] = [],
+    ): Promise<any[]> => {
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}page=${page}&per_page=${per_page}`, init);
     const link_headers = parseLinkHeader(res.headers.get('Link'));
     const json = await res.json();
     const all_response = [...previous_response, ...json]
     if ((link_headers !== null) && (typeof link_headers.current !== 'undefined') && (typeof link_headers.next !== 'undefined')) {
         page++;
         console.log(`fetching next page: ${link_headers.next.url}`);
-        return paginated_fetch(url, init, page, all_response);
+        return paginated_fetch(url, init, page, per_page, all_response);
     } else {
         console.log(`link_headers: ${JSON.stringify(link_headers)}`);
         console.log(`complete: ${page} pages, ${all_response.length} items`);
@@ -109,5 +115,51 @@ export const fetch_users = async (course_id: string, kwargs?: object): Promise<a
     const json = await paginated_fetch(url, {
         headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
     })
+    return json;
+}
+
+
+export const fetch_assignments = async (
+    course_id: number|string,
+    kwargs?: object,
+    ): Promise<any[]> => {
+
+    // Build URL
+    var url = `${CANVAS_BASE_URL}/courses/${course_id}/assignments`
+
+    // Add query parameters.
+    if (typeof kwargs !== 'undefined') {
+        const params = new URLSearchParams(flatten_kwargs(kwargs));
+        url = `${url}?${params}`;
+    }
+
+    // Fetch response.
+    const json = await paginated_fetch(url, {
+        headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
+    })
+    return json;
+}
+
+
+export const fetch_assignment = async (
+    course_id: number|string,
+    assignment_id: number|string,
+    kwargs?: object,
+    ): Promise<any> => {
+
+    // Build URL
+    var url = `${CANVAS_BASE_URL}/courses/${course_id}/assignments/${assignment_id}`
+
+    // Add query parameters.
+    if (typeof kwargs !== 'undefined') {
+        const params = new URLSearchParams(flatten_kwargs(kwargs));
+        url = `${url}?${params}`;
+    }
+
+    // Fetch response.
+    const res = await fetch(url, {
+        headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
+    })
+    const json = await res.json();
     return json;
 }
