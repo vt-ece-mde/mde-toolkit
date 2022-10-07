@@ -102,16 +102,16 @@ export default function Students({ course_list }: StudentsProps) {
 
     // const submitForm = async (event: FormEvent) => {
     const submitForm = async (data: FormData) => {
-        setIsFetching(true);
+        setIsFetching(true); // Enable fetch state.
 
+        // Get course ID from form.
         const course_id = course_list[data.course_index].id;
 
         // Get list of users.
-        const user_list = await fetch_users(course_id);
-        console.log(JSON.stringify(user_list));
+        const user_list = await fetch_users(course_id, {enrollment_type: ['student']});
 
-        setStudentList(user_list);
-        setIsFetching(false);
+        setStudentList(user_list); // Set user list.
+        setIsFetching(false); // Disable fetch state.
     }
 
 
