@@ -79,7 +79,7 @@ export default function TeamDirs() {
             ).then(blob => {
                 const element = document.createElement("a");
                 element.href = URL.createObjectURL(blob);
-                element.download = "test.zip"; // Name of file.
+                element.download = `${data.course_id}_expo_team_dirs.zip`; // Name of file.
                 document.body.appendChild(element); // Required for this to work in FireFox
                 element.click();
                 setIsFetching(false);
