@@ -1,6 +1,6 @@
 import { fetch_courses, fetch_users } from "../lib/canvas";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import getConfig from 'next/config';
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
@@ -12,70 +12,108 @@ console.log(`API_URI: ${JSON.stringify(API_URI)}`)
 console.log(`CANVAS_API_TOKEN=${CANVAS_API_TOKEN}`)
 
 type FormData = {
-    course_index: number;
+    course_id: number;
 }
 
 type FormProps = {
     course_list: any[];
+    init_form_data?: FormData;
     onSubmit(data: FormData): void;
 }
 
 function Form(props: FormProps) {
 
-    // State for current course index.
-    const [courseIndex, setCourseIndex] = useState(-1);
+    const [validForm, setValidForm] = useState<boolean>(false);
+    const [courseId, setCourseId] = useState<number>(-1);
+
+    useEffect(() => {
+        if (props.init_form_data !== undefined) {
+            console.log(`reusing form data: ${JSON.stringify(props.init_form_data)}`);
+            setCourseId(props.init_form_data.course_id);
+        }
+    }, [props.init_form_data])
+
+    useEffect(() => {
+        const valid = (courseId !== -1);
+        setValidForm(valid);
+    }, [courseId]);
 
     // Handle form event and pass data object to callback.
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
         props.onSubmit({
-            course_index: courseIndex,
+            course_id: courseId,
         })
+    }
+
+    const renderCourseIdInputElement = (): any => {
+        return (
+            <div className="input-group mb-3">
+                <span className="input-group-text" id="basic-addon1">Course ID</span>
+                <select className="custom-select" id="course_selector" onChange={e => setCourseId(Number(e.target.value))}>
+                    <option value={-1}>Select a course</option>
+                    {props.course_list.map((course, index) => {
+                        if (course.name.includes("4805") || course.name.includes("4806")) {
+                            return (<option value={ course.id } key={ index }>{ course.name }</option>);
+                        }
+                    })}
+                </select>
+            </div>
+        );
     }
 
     return (
         <form className="needs-validation" onSubmit={ onSubmit }>
         <div className="mb-3 mt-3">
-            <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <select className="custom-select" id="course_selector" onChange={e => setCourseIndex(Number(e.target.value))}>
-                    <option value={-1}>Select a course</option>
-                    {props.course_list.map((course, index) => {
-                        if (course.name.includes("4805") || course.name.includes("4806")) {
-                            return (<option value={ index } key={ index }>{ course.name }</option>);
-                        }
-                    })}
-                </select>
-            </div>
+            {/* Course ID selector. */}
+            {renderCourseIdInputElement()}
         </div>
-        <button type="submit" className="btn btn-primary" disabled={ !(courseIndex >= 0) }>Get Students</button>
+        <button type="submit" className="btn btn-primary" disabled={ !validForm }>Get Students</button>
     </form>
     );
 }
 
 
 
-export async function getServerSideProps() {
-    // Fetch course list.
-    // Filter out courses that do not have a `name` attribute.
-    var course_list = await (await fetch_courses()).filter(c => 'name' in c);
 
-    // Create component props and return.
-    const props: StudentsProps = {
-        course_list: course_list,
-    }
-    return { props: props }
-}
-
-type StudentsProps = {
-    course_list: any[];
-}
-
-export default function Students({ course_list }: StudentsProps) {
+export default function Students() {
     
     // State variables.
     const [studentList, setStudentList] = useState<any[]>([]);
+    const [courseList, setCourseList] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(false);
+    const [formData, setFormData] = useState<FormData>();
+
+    /* Get course list on initial mount (no fetch on re-render). */
+    useEffect(() => {
+        const getCourseList = async () => {
+            console.log(`Fetching courses...`)
+            var course_list = await (await fetch_courses()).filter(c => 'name' in c);
+            console.log(`Got courses: ${course_list.length}`)
+            setCourseList(course_list);
+        }
+        getCourseList();
+    }, []);
+
+
+    /* Fetch content based on form data. */
+    useEffect(() => {
+        const getContent = async (data: FormData) => {
+            setIsFetching(true); // Enable fetch state.
+    
+            // Get list of users.
+            const user_list = await fetch_users(JSON.stringify(data.course_id), {enrollment_type: ['student']});
+    
+            setStudentList(user_list); // Set user list.
+            setIsFetching(false); // Disable fetch state.
+        }
+
+        if (typeof formData !== 'undefined') {
+            getContent(formData);
+        }
+    }, [formData])
+
+
 
     /**
      * Download the current course contents as a CSV file.
@@ -100,32 +138,17 @@ export default function Students({ course_list }: StudentsProps) {
         element.click();
     }
 
-    // const submitForm = async (event: FormEvent) => {
-    const submitForm = async (data: FormData) => {
-        setIsFetching(true); // Enable fetch state.
-
-        // Get course ID from form.
-        const course_id = course_list[data.course_index].id;
-
-        // Get list of users.
-        const user_list = await fetch_users(course_id, {enrollment_type: ['student']});
-
-        setStudentList(user_list); // Set user list.
-        setIsFetching(false); // Disable fetch state.
-    }
-
 
     if (isFetching === true) {
         return (
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm }/>
+                <Form course_list={ courseList } onSubmit={ setFormData }/>
             </div>
-            <div className="container-fluid p-5">
-                <div className="spinner-border" role="status">
-                    <span className="sr-only">Loading...</span>
-                </div>
+            <div className="d-flex align-items-center ml-5 mr-5">
+                <h3>Loading...</h3>
+                <div className="spinner-border ml-auto" role="status" aria-hidden="true"></div>
             </div>
             </>
         );
@@ -136,7 +159,7 @@ export default function Students({ course_list }: StudentsProps) {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm }/>
+                <Form course_list={ courseList } onSubmit={ setFormData }/>
             </div>
             </>
         );
@@ -147,7 +170,7 @@ export default function Students({ course_list }: StudentsProps) {
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm }/>
+                <Form course_list={ courseList } onSubmit={ setFormData }/>
             </div>
             <div className="container-fluid p-5">
                 <h2>List of Students ({ studentList.length })</h2>
