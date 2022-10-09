@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
 import getConfig from 'next/config';
@@ -25,11 +25,57 @@ type FormProps = {
 
 function Form(props: FormProps) {
 
+    const [validForm, setValidForm] = useState<boolean>(false);
     const [courseId, setCourseId] = useState<number>(-1);
     const [numFeedback, setNumFeedback] = useState<string>(''); // String to allow typing.
     const [assignmentIdList, setAssignmentIdList] = useState<number[]>([]);
+    const [loadingAssignments, setLoadingAssignments] = useState<boolean>(false);
     const [assignmentList, setAssignmentList] = useState<any[]>([]);
 
+
+    /* Fetch content based on course ID change. */
+    useEffect(() => {
+        console.log(`useEffect:  courseId=${courseId}`)
+
+        /* Fetch latest assignment list. */
+        const getAssignments = async (course_id: number) => {
+            setLoadingAssignments(true);
+            const assignment_list = await fetch_assignments(course_id);
+            setAssignmentList(assignment_list);
+            setLoadingAssignments(false);
+        }
+
+        // Temporarily reset assignment IDs.
+        setAssignmentList([]);
+
+        // Get assignments for course.
+        if (courseId !== -1) {
+            getAssignments(courseId);
+        }
+
+    }, [courseId]);
+
+    /* Update assignment list. */
+    useEffect(() => {
+        console.log(`useEffect:  assignmentList.length=${assignmentList.length}`)
+
+        // Reset initial assignment ID list.
+        if (assignmentList.length > 0) {
+            setAssignmentIdList([-1]);
+        } else {
+            setAssignmentIdList([]);
+        }
+
+    }, [assignmentList]);
+
+    /* Update form validity. */
+    useEffect(() => {
+        const valid = (courseId !== -1) && (numFeedback !== '') && (assignmentIdList.filter(v => v !== -1).length > 0);
+        setValidForm(valid);
+    }, [courseId, numFeedback, assignmentIdList]);
+
+
+    /* Handle form submission. */
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
         const data: FormData = {
@@ -41,55 +87,30 @@ function Form(props: FormProps) {
         props.onSubmit(data);
     }
 
-    const changeCourseId = async (course_id: number) => {
-
-        console.log(`course_id: ${course_id}`);
-        setCourseId(courseId);
-
-        // Valid course ID.
-        if (course_id !== -1) {
-            const assignment_list = await fetch_assignments(course_id);
-            setAssignmentList(assignment_list);
-        }
-        else {
-            // setAssignmentIdList([-1]);
-            setAssignmentList([]);
-        }
-        setAssignmentIdList([-1]);
-    }
 
     const renderAssignmentIdElement = (index: number): any => {
         return (
             <div className="input-group mb-3" key={index}>
                 <span className="input-group-text">Assignment ID</span>
-                <select className="custom-select" id="assignment_selector" onChange={e => {
-                    console.log(`e.target.value: ${e.target.value}`);
-                    const tup: [number, number] = JSON.parse(e.target.value);
-                    var items = [...assignmentIdList];
-                    items[tup[0]] = tup[1];
-                    setAssignmentIdList(items);
-                }}>
+                <select className="custom-select" id="assignment_selector" onChange={e => setAssignmentIdList(prev => {
+                        console.log(`setting assignment ID: e.target.value=${e.target.value}`);
+                        const tup: [number, number] = JSON.parse(e.target.value);
+                        prev[tup[0]] = tup[1];
+                        return prev;
+                    })}>
                     <option value={ JSON.stringify([index, -1]) }>Select an assignment</option>
                     {assignmentList.map((assignment, i) => {
-                        return (<option value={ JSON.stringify([index, i]) } key={ i }>{ assignment.name }</option>);
+                        return (<option value={ JSON.stringify([index, assignment.id]) } key={ i }>{ assignment.name }</option>);
                     })}
                 </select>
-
-
-
-                {/* <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="assignment_id" value={ formData.assignment_ids[index] } onChange={(event) => handleAssignmentIdChange(index, event)} required /> */}
                 {
                     (assignmentIdList.length > 1) ? (
-                        <button className="btn btn-danger" onClick={() => {
-                            const items = [...assignmentIdList];
-                            items.splice(index, 1); // Remove the `index` element.
-                            setAssignmentIdList(items);
-                        }}>delete</button>
+                        <button className="btn btn-danger" onClick={() => setAssignmentIdList(prev => prev.filter((_,i) => i !== index))}>delete</button>
                     ) : null
                 }
                 {
                     index === assignmentIdList.length-1 ? (
-                        <button className="btn btn-success" onClick={() => setAssignmentIdList([...assignmentIdList, -1])}>add</button>
+                        <button className="btn btn-success" onClick={() => setAssignmentIdList(prev => [...prev, -1])}>add</button>
                     ) : null
                 }
             </div>
@@ -104,7 +125,7 @@ function Form(props: FormProps) {
         return (
             <div className="input-group mb-3">
                 <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <select className="custom-select" id="course_selector" onChange={e => changeCourseId(Number(e.target.value))}>
+                <select className="custom-select" id="course_selector" onChange={e => setCourseId(Number(e.target.value))}>
                     <option value={-1}>Select a course</option>
                     {props.course_list.map((course, index) => {
                         if (course.name.includes("4805") || course.name.includes("4806")) {
@@ -112,6 +133,14 @@ function Form(props: FormProps) {
                         }
                     })}
                 </select>
+                {loadingAssignments ? 
+                    (
+                    <div className="d-flex align-items-center ml-5 mr-5">
+                        <strong>Loading...</strong>
+                        <div className="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                    ) : null
+                }
             </div>
         );
     }
@@ -127,113 +156,20 @@ function Form(props: FormProps) {
 
     return (
         <form className="needs-validation" onSubmit={ onSubmit }>
-        <div className="mb-3 mt-3">
+            <div className="mb-3 mt-3">
 
-            {/* Number of feedback rounds. */}
-            {renderFeedbackRoundInputElement()}
+                {/* Number of feedback rounds. */}
+                {renderFeedbackRoundInputElement()}
 
-            {/* Course ID selector. */}
-            {renderCourseIdInputElement()}
+                {/* Course ID selector. */}
+                {renderCourseIdInputElement()}
 
-            {/* Render assignment ID drop-down boxes. */}
-            {renderAssignmentIdInputElement()}
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={ (courseId !== -1) && (numFeedback !== '') && (assignmentIdList.length > 0) }>Create Spreadsheet</button>
-    </form>
+                {/* Render assignment ID drop-down boxes. */}
+                {renderAssignmentIdInputElement()}
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={ !validForm }>Create Spreadsheet</button>
+        </form>
     );
-
-
-    // return (
-    //     <form className="needs-validation" onSubmit={ (e) => onSubmit(formData, e) }>
-    //     <div className="mb-3 mt-3">
-    //         <div className="input-group mb-3">
-    //             <span className="input-group-text">Course ID</span>
-    //             <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="course_id" value={ formData.course_id } onChange={handleCourseIdChange} required />
-    //         </div>
-    //         <div className="input-group mb-3">
-    //             <span className="input-group-text"># Feedback Rounds</span>
-    //             <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="n_feedback" value={ formData.n_feedback } onChange={handleNumFeedbackChange} required />
-    //         </div>
-    //         {formData.assignment_ids.map((_, index) => renderAssignmentIdElement(index))}
-    //     </div>
-    //     <button type="submit" className="btn btn-primary">Create Spreadsheet</button>
-    // </form>
-    // );
-
-
-
-
-
-    // // const [formData, setFormData] = useState<FormData>({...data})
-    // const [formData, setFormData] = useState<FormData>({
-    //     course_id: "",
-    //     n_feedback: "",
-    //     assignment_ids: [""],
-    //     ...data,
-    // });
-
-    // const handleCourseIdChange = (event: ChangeEvent<HTMLInputElement>) => {
-    //     setFormData({
-    //         ...formData,
-    //         course_id: event.target.value,
-    //     });
-    // }
-
-    // const handleNumFeedbackChange = (event: ChangeEvent<HTMLInputElement>) => {
-    //     setFormData({
-    //         ...formData,
-    //         n_feedback: event.target.value,
-    //     });
-    // }
-
-
-    // const handleAssignmentIdChange = (index: number, event: ChangeEvent<HTMLInputElement>) => {
-    //     // console.log(`changing assignment ID: ${index} to "${event.target.value}"`);
-
-    //     let items = [...formData.assignment_ids];
-    //     items[index] = event.target.value; // Update the desired index.
-
-    //     setFormData({
-    //         ...formData,
-    //         assignment_ids: items,
-    //     });
-    // }
-
-    // const addAssignmentId = () => {
-    //     setFormData({
-    //         ...formData,
-    //         assignment_ids: [...formData.assignment_ids, ""],
-    //     });
-    // }
-
-    // const removeAssignmnetId = (index: number) => {
-    //     let items = [...formData.assignment_ids];
-    //     items.splice(index, 1); // Remove the `index` element.
-    //     setFormData({
-    //         ...formData,
-    //         assignment_ids: items,
-    //     });
-    // }
-
-    
-
-
-    // return (
-    //     <form className="needs-validation" onSubmit={ (e) => onSubmit(formData, e) }>
-    //     <div className="mb-3 mt-3">
-    //         <div className="input-group mb-3">
-    //             <span className="input-group-text">Course ID</span>
-    //             <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="course_id" value={ formData.course_id } onChange={handleCourseIdChange} required />
-    //         </div>
-    //         <div className="input-group mb-3">
-    //             <span className="input-group-text"># Feedback Rounds</span>
-    //             <input type="text" className="form-control" placeholder="Enter either a URL or an integer value" name="n_feedback" value={ formData.n_feedback } onChange={handleNumFeedbackChange} required />
-    //         </div>
-    //         {formData.assignment_ids.map((_, index) => renderAssignmentIdElement(index))}
-    //     </div>
-    //     <button type="submit" className="btn btn-primary">Create Spreadsheet</button>
-    // </form>
-    // );
 }
 
 const isURL = (s: string) => {
@@ -273,10 +209,6 @@ export default function IprHistorySpreadsheet({ course_list }: IprHistorySpreads
 
         // File contents.
         var csv: string[] = contentList.map((row: string[]) => row.join(delimiter));
-
-        // // Header.
-        // const 
-        // csv.unshift("student_id,student_name,student_sortable_name");
 
         // Convert to string.
         const csv_string = csv.join("\n");
