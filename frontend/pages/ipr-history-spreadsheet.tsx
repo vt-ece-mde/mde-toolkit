@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import getConfig from 'next/config';
 import { fetch_assignment, fetch_assignments, fetch_courses } from "../lib/canvas";
+import { CourseIdInput } from "../components/dynamiccanvasform";
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 const API_URI = serverRuntimeConfig.API_URI || publicRuntimeConfig.API_URI;
 const CANVAS_API_TOKEN = serverRuntimeConfig.CANVAS_API_TOKEN || publicRuntimeConfig.CANVAS_API_TOKEN;
@@ -135,30 +136,6 @@ function Form(props: FormProps) {
         return assignmentIdList.map((_, index) => renderAssignmentIdElement(index));
     }
 
-    const renderCourseIdInputElement = (): any => {
-        return (
-            <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <select className="custom-select" id="course_selector" onChange={e => setCourseId(Number(e.target.value))}>
-                    <option value={-1}>Select a course</option>
-                    {props.course_list.map((course, index) => {
-                        if (course.name.includes("4805") || course.name.includes("4806")) {
-                            return (<option value={ course.id } key={ index }>{ course.name }</option>);
-                        }
-                    })}
-                </select>
-                {loadingAssignments ? 
-                    (
-                    <div className="d-flex align-items-center ml-5 mr-5">
-                        <strong>Loading...</strong>
-                        <div className="spinner-border ml-auto" role="status" aria-hidden="true"></div>
-                    </div>
-                    ) : null
-                }
-            </div>
-        );
-    }
-
     const renderFeedbackRoundInputElement = (): any => {
         return (
             <div className="input-group mb-3">
@@ -176,7 +153,7 @@ function Form(props: FormProps) {
                 {renderFeedbackRoundInputElement()}
 
                 {/* Course ID selector. */}
-                {renderCourseIdInputElement()}
+                <CourseIdInput course_list={props.course_list} onChange={setCourseId}/>
 
                 {/* Render assignment ID drop-down boxes. */}
                 {renderAssignmentIdInputElement()}
