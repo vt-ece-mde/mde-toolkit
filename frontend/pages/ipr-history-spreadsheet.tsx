@@ -20,6 +20,7 @@ type FormData = {
 
 type FormProps = {
     course_list: any[];
+    init_form_data?: FormData;
     onSubmit(data: FormData): void;
 }
 
@@ -33,9 +34,18 @@ function Form(props: FormProps) {
     const [assignmentList, setAssignmentList] = useState<any[]>([]);
 
 
+    useEffect(() => {
+        if (props.init_form_data !== undefined) {
+            console.log(`reusing form data: ${JSON.stringify(props.init_form_data)}`);
+            setNumFeedback(JSON.stringify(props.init_form_data.n_feedback));
+            setCourseId(props.init_form_data.course_id);
+            // setAssignmentIdList(props.init_form_data.assignment_ids);
+        }
+    }, [props.init_form_data])
+
+
     /* Fetch content based on course ID change. */
     useEffect(() => {
-        console.log(`useEffect:  courseId=${courseId}`)
 
         /* Fetch latest assignment list. */
         const getAssignments = async (course_id: number) => {
@@ -57,12 +67,18 @@ function Form(props: FormProps) {
 
     /* Update assignment list. */
     useEffect(() => {
-        console.log(`useEffect:  assignmentList.length=${assignmentList.length}`)
 
         // Reset initial assignment ID list.
         if (assignmentList.length > 0) {
+            console.log(`reset assignment IDs to [-1]`)
             setAssignmentIdList([-1]);
-        } else {
+        } 
+        else if (props.init_form_data !== undefined) {
+            console.log(`props init is defined: ${props.init_form_data.assignment_ids}`)
+            setAssignmentIdList(props.init_form_data.assignment_ids);
+        }
+        else {
+            console.log(`empty assignment IDs`)
             setAssignmentIdList([]);
         }
 
@@ -70,7 +86,7 @@ function Form(props: FormProps) {
 
     /* Update form validity. */
     useEffect(() => {
-        const valid = (courseId !== -1) && (numFeedback !== '') && (assignmentIdList.filter(v => v !== -1).length > 0);
+        const valid = (courseId !== -1) && (numFeedback.length > 0) && (assignmentIdList.filter(v => v !== -1).length > 0);
         setValidForm(valid);
     }, [courseId, numFeedback, assignmentIdList]);
 
@@ -83,7 +99,6 @@ function Form(props: FormProps) {
             n_feedback: Number(numFeedback),
             assignment_ids: assignmentIdList.filter(v => v !== -1), // Remove any placeholder IDs.
         }
-        console.log(`data: ${JSON.stringify(data)}`);
         props.onSubmit(data);
     }
 
@@ -93,7 +108,6 @@ function Form(props: FormProps) {
             <div className="input-group mb-3" key={index}>
                 <span className="input-group-text">Assignment ID</span>
                 <select className="custom-select" id="assignment_selector" onChange={e => setAssignmentIdList(prev => {
-                        console.log(`setting assignment ID: e.target.value=${e.target.value}`);
                         const tup: [number, number] = JSON.parse(e.target.value);
                         prev[tup[0]] = tup[1];
                         return prev;
@@ -180,26 +194,54 @@ const isURL = (s: string) => {
     }
 }
 
-export async function getServerSideProps() {
-    // Fetch course list.
-    // Filter out courses that do not have a `name` attribute.
-    var course_list = await (await fetch_courses()).filter(c => 'name' in c);
 
-    // Create component props and return.
-    const props: IprHistorySpreadsheetProps = {
-        course_list: course_list,
-    }
-    return { props: props }
-}
-
-type IprHistorySpreadsheetProps = {
-    course_list: any[];
-}
-
-export default function IprHistorySpreadsheet({ course_list }: IprHistorySpreadsheetProps) {
+export default function IprHistorySpreadsheet() {
     
     const [contentList, setContentList] = useState<string[][]>([]);
+    const [courseList, setCourseList] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(false);
+    const [formData, setFormData] = useState<FormData>();
+
+    /* Get course list on initial mount (no fetch on re-render). */
+    useEffect(() => {
+        const getCourseList = async () => {
+            console.log(`Fetching courses...`)
+            var course_list = await (await fetch_courses()).filter(c => 'name' in c);
+            console.log(`Got courses: ${course_list.length}`)
+            setCourseList(course_list);
+        }
+        getCourseList();
+    }, []);
+
+
+    /* Fetch content based on form data. */
+    useEffect(() => {
+        const getContent = async (data: FormData) => {
+            setIsFetching(true); // Enable fetch state.
+
+            const params = new URLSearchParams([
+                ['course_id', String(data.course_id)],
+                ['n_feedback', String(data.n_feedback)],
+                ...data.assignment_ids.map(s => ['assignment_id', String(s)]),
+            ]);
+
+            // Make API call.
+            // const res = await fetch(`${API_URI}/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
+            const res = await fetch(`/api/mde/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
+                headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
+            })
+            const contentList = await res.json();
+            console.log(JSON.stringify(contentList));
+
+            setContentList(contentList); // Set content list.
+            setIsFetching(false); // Disable fetch state.
+        }
+
+        if (typeof formData !== 'undefined') {
+            getContent(formData);
+        }
+
+    }, [formData])
 
     /**
      * Download the current course contents as a CSV file.
@@ -221,37 +263,17 @@ export default function IprHistorySpreadsheet({ course_list }: IprHistorySpreads
         element.click();
     }
 
-    const submitForm = async (data: FormData) => {
-        setIsFetching(true); // Enable fetch state.
-
-        const params = new URLSearchParams([
-            ['course_id', String(data.course_id)],
-            ['n_feedback', String(data.n_feedback)],
-            ...data.assignment_ids.map(s => ['assignment_id', String(s)]),
-        ]);
-
-        // Make API call.
-        // const res = await fetch(`${API_URI}/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
-        const res = await fetch(`/api/mde/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
-            headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
-        })
-        const contentList = await res.json();
-        console.log(JSON.stringify(contentList));
-
-        setContentList(contentList); // Set content list.
-        setIsFetching(false); // Disable fetch state.
-    }
-
 
     if (isFetching === true) {
         return (
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm } />
+                <Form course_list={ courseList } init_form_data={ formData } onSubmit={ setFormData } />
             </div>
-            <div className="container-fluid p-5">
+            <div className="d-flex align-items-center ml-5 mr-5">
                 <h3>Loading...</h3>
+                <div className="spinner-border ml-auto" role="status" aria-hidden="true"></div>
             </div>
             </>
         );
@@ -262,10 +284,11 @@ export default function IprHistorySpreadsheet({ course_list }: IprHistorySpreads
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm } />
+                <Form course_list={ courseList } init_form_data={ formData } onSubmit={ setFormData } />
             </div>
             </>
         );
+
     }
 
     else {
@@ -273,7 +296,7 @@ export default function IprHistorySpreadsheet({ course_list }: IprHistorySpreads
             <>
             <div className="container-sm p-5">
                 <h3>Filters</h3>
-                <Form course_list={ course_list } onSubmit={ submitForm } />
+                <Form course_list={ courseList } init_form_data={ formData } onSubmit={ setFormData } />
             </div>
             <div className="container-fluid p-5">
                 <h2>IPR History Spreadsheet</h2>
