@@ -3,6 +3,7 @@ import { fetch_courses, fetch_users } from "../lib/canvas";
 import { FormEvent, useEffect, useState } from "react";
 
 import getConfig from 'next/config';
+import { CourseIdInput } from "../components/dynamiccanvasform";
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 const API_URI = serverRuntimeConfig.API_URI || publicRuntimeConfig.API_URI;
 const CANVAS_API_TOKEN = serverRuntimeConfig.CANVAS_API_TOKEN || publicRuntimeConfig.CANVAS_API_TOKEN;
@@ -46,27 +47,11 @@ function Form(props: FormProps) {
         })
     }
 
-    const renderCourseIdInputElement = (): any => {
-        return (
-            <div className="input-group mb-3">
-                <span className="input-group-text" id="basic-addon1">Course ID</span>
-                <select className="custom-select" id="course_selector" onChange={e => setCourseId(Number(e.target.value))}>
-                    <option value={-1}>Select a course</option>
-                    {props.course_list.map((course, index) => {
-                        if (course.name.includes("4805") || course.name.includes("4806")) {
-                            return (<option value={ course.id } key={ index }>{ course.name }</option>);
-                        }
-                    })}
-                </select>
-            </div>
-        );
-    }
-
     return (
         <form className="needs-validation" onSubmit={ onSubmit }>
         <div className="mb-3 mt-3">
             {/* Course ID selector. */}
-            {renderCourseIdInputElement()}
+            <CourseIdInput course_list={props.course_list} onChange={setCourseId}/>
         </div>
         <button type="submit" className="btn btn-primary" disabled={ !validForm }>Get Students</button>
     </form>
