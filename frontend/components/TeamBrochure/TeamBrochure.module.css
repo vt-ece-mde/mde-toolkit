@@ -5,7 +5,8 @@
  * https://nextjs.org/docs/basic-features/built-in-css-support
  **/
 
- * {
+ /* * { */
+.brochure {
     margin: 0;
      padding: 0; 
      text-indent: 0;
@@ -20,7 +21,7 @@
      font-size: 8pt;
  }
 
- h1 {
+.h1 {
      color: #83003F;
      font-family: "Gineso Cond Bold", monospace;
      font-style: normal;
@@ -65,7 +66,7 @@
      font-size: 12pt;
  }
 
- h2 {
+.h2 {
      color: #008891;
      font-family: Calibri, sans-serif;
      font-style: normal;
@@ -83,7 +84,7 @@
      font-size: 14pt;
  }
 
- h4 {
+.h4 {
      color: #F57F28;
      font-family: "Acherus Grotesque Black";
      font-style: normal;
@@ -92,7 +93,7 @@
      font-size: 12pt;
  }
 
- .h3, h3 {
+.h3 {
      color: #231F20;
      font-family: Calibri, sans-serif;
      font-style: normal;
@@ -101,7 +102,7 @@
      font-size: 14pt;
  }
 
- .p, p {
+.p {
      color: #231F20;
      font-family: "Times New Roman", serif;
      font-style: normal;
@@ -128,3 +129,42 @@
      text-decoration: none;
      font-size: 14pt;
  }
+
+.sponsor-name {
+    color: #83003F;
+}
+
+.team-figure {
+    width: 100px;
+    height: auto;
+}
+
+.team-figure-photo {
+    max-width: 100%;
+    height: auto;
+    /* max-height: 100%; */
+    object-fit: contain;
+}
+
+.test3 {
+    display: grid;
+    /* color: red; */
+    /* outline: blue; */
+    grid-template-columns: repeat(3, 1fr);
+}
+
+
+.projectName {
+    color: #83003F;
+    font-family: "Gineso Cond Bold", monospace;
+    font-style: normal;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 30pt;
+}
+
+
+.TeamBrochure {
+    display: grid;
+    /* color: red; */
+}
