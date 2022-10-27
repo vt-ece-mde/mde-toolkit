@@ -1,0 +1,130 @@
+/**
+ * Styles for `TeamBrochure` component.
+ *
+ * See Next.JS component-level CSS support:
+ * https://nextjs.org/docs/basic-features/built-in-css-support
+ **/
+
+ * {
+    margin: 0;
+     padding: 0; 
+     text-indent: 0;
+ }
+
+ .s1 {
+     color: black;
+     font-family: "Times New Roman", serif;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 8pt;
+ }
+
+ h1 {
+     color: #83003F;
+     font-family: "Gineso Cond Bold", monospace;
+     font-style: normal;
+     font-weight: bold;
+     text-decoration: none;
+     font-size: 30pt;
+ }
+
+ .s2 {
+     color: #008891;
+     font-family: "Acherus Grotesque Regular", monospace;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 16pt;
+ }
+
+ .s3 {
+     color: #008891;
+     font-family: "Acherus Grotesque Regular", monospace;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 14pt;
+ }
+
+ .s4 {
+     color: #76777A;
+     font-family: "Acherus Grotesque Black";
+     font-style: normal;
+     font-weight: bold;
+     text-decoration: none;
+     font-size: 12pt;
+ }
+
+ .s5 {
+     color: #76777A;
+     font-family: "Acherus Grotesque Regular", monospace;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 12pt;
+ }
+
+ h2 {
+     color: #008891;
+     font-family: Calibri, sans-serif;
+     font-style: normal;
+     font-weight: bold;
+     text-decoration: underline;
+     font-size: 16pt;
+ }
+
+ .s6 {
+     color: #939598;
+     font-family: "Acherus Grotesque Regular", monospace;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: underline;
+     font-size: 14pt;
+ }
+
+ h4 {
+     color: #F57F28;
+     font-family: "Acherus Grotesque Black";
+     font-style: normal;
+     font-weight: bold;
+     text-decoration: none;
+     font-size: 12pt;
+ }
+
+ .h3, h3 {
+     color: #231F20;
+     font-family: Calibri, sans-serif;
+     font-style: normal;
+     font-weight: bold;
+     text-decoration: none;
+     font-size: 14pt;
+ }
+
+ .p, p {
+     color: #231F20;
+     font-family: "Times New Roman", serif;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 14pt;
+     margin: 0pt;
+ }
+
+ .s7 {
+     color: #939598;
+     font-family: "Arial Narrow", sans-serif;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 16pt;
+ }
+
+ .s9 {
+     color: #231F20;
+     font-family: "Arial Narrow", sans-serif;
+     font-style: normal;
+     font-weight: normal;
+     text-decoration: none;
+     font-size: 14pt;
+ }
