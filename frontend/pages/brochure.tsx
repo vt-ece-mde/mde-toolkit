@@ -44,7 +44,7 @@ const team: Team = {
     project_name: lorem.generateWords(4),
     project_summary: lorem.generateParagraphs(1),
     sme_names: Array.from(Array(3).keys()).map(_ => lorem.generateWords(2)),
-    sponsor_names: ["Matt Gardner"],
+    sponsor_names: Array.from(Array(3).keys()).map(_ => lorem.generateWords(2)),
     team_members: Array.from(Array(5).keys()).map(_ => ({
             title: lorem.generateWords(1),
             last_name: lorem.generateWords(1),
