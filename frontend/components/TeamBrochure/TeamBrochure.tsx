@@ -92,9 +92,9 @@ export function TeamMembers( props: TeamMembersProps ) {
     return (<>
         {props.team_members.map((tm, index) => {
             return (
-                <td key={index}>
+                <div key={index}>
                     <TeamMemberInfo {...tm} />
-                </td>
+                </div>
             );
         })}
     </>);
@@ -129,26 +129,13 @@ export default function TeamBrochure( props: TeamBrochureProps ) {
             <title>{props.project_name}</title>
         </Head>
         <body> */}
-        <div className={style.TeamBrochure}>
-            <div className={style.projectName}>
-                {/* <h1 className={style.h1}>{props.project_name}</h1> */}
-                {props.project_name}
-            </div>
-            <p className={`${style.p} text-indent: 0pt; text-align: left;`}>
-                <br />
-            </p>
-            <p className={`${style.p} text-indent: 0pt; text-align: left;`}></p>
+        <div className="grid grid-cols-1 gap-4">
 
-            <div className={style.test3}>
-                <div>1</div>
-                <div>2</div>
-                <div>3</div>
-                <div>4</div>
-                <div>5</div>
-            </div>
+            {/* Project name */}
+            <div className="text-5xl text-[#83003F]">{props.project_name}</div>
 
-
-            <div className='team-photo-challenge'>
+            {/* Project info */}
+            <div className="grid grid-cols-2 gap-4">
                 <div>
                     <TeamBrochurePhoto sme_names={props.sme_names} team_photo_names={props.team_photo_names} team_photo_url={props.team_photo_url}/>
                 </div>
@@ -157,28 +144,15 @@ export default function TeamBrochure( props: TeamBrochureProps ) {
                 </div>
             </div>
 
-            <TeamMembers team_members={props.team_members}/>
+            {/* Team information */}
+            <div className="grid grid-cols-3 gap-4">
+                <TeamMembers team_members={props.team_members}/>
+            </div>
 
-            {/* <table>
-                <tbody>
-                    <tr>
-                        <td>
-                            <TeamBrochurePhoto sme_names={props.sme_names} team_photo_names={props.team_photo_names} team_photo_url={props.team_photo_url}/>
-                        </td>
-                        <td>
-                            <TeamChallenge project_summary={props.project_summary} />
-                        </td>
-                    </tr>
-                    <tr>
-                        <TeamMembers team_members={props.team_members}/>
-                    </tr>
-                </tbody>
-            </table> */}
-
-            {/* Blank spacing */}
-            <p></p><p></p><p></p><p></p>
-
-            {/* <TeamProjectSponsors sponsor_names={props.sponsor_names}/> */}
+            {/* Sponsor information */}
+            <div>
+                <TeamProjectSponsors sponsor_names={props.sponsor_names}/>
+            </div>
         {/* </body> */}
         </div>
     </>);
