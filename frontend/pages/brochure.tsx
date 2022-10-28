@@ -1,4 +1,16 @@
 import TeamBrochure from '../components/TeamBrochure'
+import { LoremIpsum } from "lorem-ipsum";
+
+const lorem = new LoremIpsum({
+    sentencesPerParagraph: {
+      max: 8,
+      min: 4
+    },
+    wordsPerSentence: {
+      max: 16,
+      min: 4
+    }
+});
 
 // type User = {
 //     title: string;
@@ -30,51 +42,22 @@ type Team = {
 }
 const team: Team = {
     project_name: "Power Adaptive Compute Nodes",
-    project_summary: "Create a distributed computing network of at least 5 nodes in various locations, reliant on isolated solar power. Node coordination of data processing is determined by the power availability at each location.",
-    sme_names: ["Jaime De La Ree Lopez"],
+    project_summary: lorem.generateParagraphs(1),
+    sme_names: Array.from(Array(3).keys()).map(_ => lorem.generateWords(2)),
     sponsor_names: ["Matt Gardner"],
-    team_members: [
-        {
-            title: 'Mr',
-            last_name: "Anderson",
-            first_name: "Dave",
-            email: "test@email.com",
-            degrees: "EE",
-            major: "Computer Engineering Chip-Scale Integration",
-            hometown: "Alexandria",
-            state_or_country: "VA",
-            aspiration: "I want to continue learning about and developing software so that I can give back to the open source community whose efforts and examples have supported me from high school to college.",
-            course_comment: "This course gave me a better understanding of how project management can make or break a final result, as well as how to effectively make tradeoffs in the pursuit of a final product.",
-        },
-        {
-            title: 'Mr',
-            last_name: "Anderson",
-            first_name: "Dave",
-            email: "test@email.com",
-            degrees: "EE",
-            major: "Computer Engineering Chip-Scale Integration",
-            hometown: "Alexandria",
-            state_or_country: "VA",
-            aspiration: "I want to continue learning about and developing software so that I can give back to the open source community whose efforts and examples have supported me from high school to college.",
-            course_comment: "This course gave me a better understanding of how project management can make or break a final result, as well as how to effectively make tradeoffs in the pursuit of a final product.",
-        },
-        {
-            title: 'Mr',
-            last_name: "Anderson",
-            first_name: "Dave",
-            email: "test@email.com",
-            degrees: "EE",
-            major: "Computer Engineering Chip-Scale Integration",
-            hometown: "Alexandria",
-            state_or_country: "VA",
-            aspiration: "I want to continue learning about and developing software so that I can give back to the open source community whose efforts and examples have supported me from high school to college.",
-            course_comment: "This course gave me a better understanding of how project management can make or break a final result, as well as how to effectively make tradeoffs in the pursuit of a final product.",
-        },
-    ],
-    team_photo_names: "LEFT TO RIGHT: Ken Torres, Shannon Woolfolk, Andrew Beauchemin, Boyan Pan, Dave Anderson",
-    // team_photo_url: "/Volumes/GoogleDrive/Shared drives/Open Access ECE MDE/Fall 2022/Test/BrochureSample/ECE-MDEprogram_Spring2022 26/Image_121.png",
-    // team_photo_url: "https://drive.google.com/file/d/1-mki_kMVwh10GO02dxz-vxW9GSXvO0Vz/view",
-    // team_photo_url: "https://drive.google.com/uc?export=view&id=1-mki_kMVwh10GO02dxz-vxW9GSXvO0Vz",
+    team_members: Array.from(Array(5).keys()).map(_ => ({
+            title: lorem.generateWords(1),
+            last_name: lorem.generateWords(1),
+            first_name: lorem.generateWords(1),
+            email: lorem.generateWords(1),
+            degrees: lorem.generateWords(1),
+            major: lorem.generateWords(1),
+            hometown: lorem.generateWords(1),
+            state_or_country: lorem.generateWords(1).toUpperCase(),
+            aspiration: lorem.generateParagraphs(1),
+            course_comment: lorem.generateParagraphs(1),
+    })),
+    team_photo_names: `LEFT TO RIGHT: ${(Array.from(Array(5).keys()).map(_ => lorem.generateWords(2))).join(', ')}`,
     team_photo_url: "https://drive.google.com/uc?export=view&id=1cBsKbJqjt-g9VyJFYEMptLEgdbGBZk05",
 }
 
