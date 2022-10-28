@@ -1,5 +1,6 @@
 import TeamBrochure from '../components/TeamBrochure'
 import { LoremIpsum } from "lorem-ipsum";
+import { renderToStaticMarkup } from 'react-dom/server'
 
 const lorem = new LoremIpsum({
     sentencesPerParagraph: {
@@ -64,5 +65,41 @@ const team: Team = {
 
 
 export default function Brochure() {
-    return (<TeamBrochure {...team}/>);
+
+    const component = <TeamBrochure {...team}/>;
+
+    const download_html = async () => {
+        // Convert component to static HTML markup.
+        const markup = renderToStaticMarkup(component)
+
+        // Build HTML core template and insert component markup.
+        // Since component is styled using Tailwind, include the CDN reference.
+        const html = `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <script src="https://cdn.tailwindcss.com"></script>
+            </head>
+            <body>
+                <div>${markup}</div>
+            </body>
+        </html>
+        `;
+
+        // Download as HTML file.
+        const file = new Blob([html], {type: 'text/html'});
+        const element = document.createElement("a");
+        element.href = URL.createObjectURL(file);
+        element.download = "test.html"; // Name of file.
+        document.body.appendChild(element); // Required for this to work in FireFox
+        element.click();
+    }
+
+
+    return (<>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={ download_html }>hello</button>
+        {component}
+    </>);
+    // return (<TeamBrochure {...team}/>);
 }
