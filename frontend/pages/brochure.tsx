@@ -79,6 +79,7 @@ export default function Brochure() {
         <html>
             <head>
                 <meta charset="UTF-8">
+                <title>${team.project_name}</title>
                 <script src="https://cdn.tailwindcss.com"></script>
             </head>
             <body>
