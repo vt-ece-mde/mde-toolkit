@@ -41,7 +41,7 @@ type Team = {
     team_photo_url: string; // URL to image.
 }
 const team: Team = {
-    project_name: "Power Adaptive Compute Nodes",
+    project_name: lorem.generateWords(4),
     project_summary: lorem.generateParagraphs(1),
     sme_names: Array.from(Array(3).keys()).map(_ => lorem.generateWords(2)),
     sponsor_names: ["Matt Gardner"],
