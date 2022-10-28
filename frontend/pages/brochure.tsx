@@ -64,9 +64,5 @@ const team: Team = {
 
 
 export default function Brochure() {
-    return (<>
-        <div>
-            <TeamBrochure {...team}/>
-        </div>
-    </>);
+    return (<TeamBrochure {...team}/>);
 }
