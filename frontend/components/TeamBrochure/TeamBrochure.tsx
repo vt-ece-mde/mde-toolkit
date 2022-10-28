@@ -111,11 +111,11 @@ export default function TeamBrochure( props: TeamBrochureProps ) {
             <div className="mb-3 text-5xl text-[#83003F] text-center font-bold font-mono">{props.project_name}</div>
 
             {/* Project info */}
-            <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-1">
+            <div className="grid grid-cols-5 gap-4">
+                <div className="col-span-2">
                     <TeamBrochurePhoto sme_names={props.sme_names} team_photo_names={props.team_photo_names} team_photo_url={props.team_photo_url}/>
                 </div>
-                <div className="col-span-2 text-left">
+                <div className="col-span-3 text-left">
                     <TeamChallenge project_summary={props.project_summary} />
                 </div>
             </div>
