@@ -1,5 +1,3 @@
-import style from './TeamBrochure.module.css'
-import Head from "next/head";
 
 // Team sample folder:
 // https://drive.google.com/drive/u/1/folders/1QQdj-9N7y_8eyEdJ3qIXjOBgWsEFrbKU
@@ -20,10 +18,8 @@ export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
     return (
         <div className="team-figure">
             <figure>
-                <img className="team-figure-photo" src={props.team_photo_url} alt="Team Photo" />
-                <figcaption className={`${style.s4}`} style={{
-                    textAlign: 'left',
-                }}>
+                <img src={props.team_photo_url} alt="Team Photo" />
+                <figcaption className="text-[#76777A] text-md font-normal">
                     <p>{props.team_photo_names}</p>
                     <p>{`SME: ${props.sme_names.join(', ')}`}</p>
                 </figcaption>
@@ -38,8 +34,8 @@ export type TeamChallengeProps = {
 }
 export function TeamChallenge( { project_summary }: TeamChallengeProps ) {
     return (<>
-        <b className={style.s2}>CHALLENGE</b>
-        <h2 className={`${style.h2} ${style.s3}`}>{project_summary}</h2>
+        <div className="text-[#008891] text-2xl font-normal font-mono">CHALLENGE</div>
+        <div className="text-[#008891] text-xl font-normal font-mono">{project_summary}</div>
     </>);
 }
 
@@ -58,30 +54,16 @@ export type TeamMemberInfoProps = {
 }
 export function TeamMemberInfo( props: TeamMemberInfoProps ) {
     return (<>
-        <h2 className={`${style.h2} padding-top: 5pt;padding-left: 54pt;text-indent: 0pt;text-align: left;`}>
-            {`${props.first_name} ${props.last_name}`}
-            <span className={style.s6}>
-                {`${props.hometown}, ${props.state_or_country}`}
-            </span>
-        </h2>
-
-        <h4 className={`${style.h4} padding-top: 1pt;padding-left: 54pt;text-indent: 0pt;line-height: 110%;text-align: justify;`}>
-            {props.degrees}
-        </h4>
-
-        <h3 className={`${style.h3} padding-top: 4pt;padding-left: 54pt;text-indent: 0pt;line-height: 112%;text-align: left;`}>
-            Aspirations:
-            <span className={style.p}>
-                {props.aspiration}
-            </span>
-        </h3>
-
-        <h3 className={`${style.h3} padding-top: 4pt;padding-left: 54pt;text-indent: 0pt;line-height: 112%;text-align: left;`}>
-            Class Comment:
-            <span className={style.p}>
-                {props.course_comment}
-            </span>
-        </h3>
+        <div className="text-[#008891] text-2xl font-bold font-sans underline">
+            {`${props.first_name} ${props.last_name}`} <span className="text-[#939598] text-xl underline font-mono">{`${props.hometown}, ${props.state_or_country}`}</span>
+        </div>
+        <div className="pt-2 text-[#F57F28] text-lg font-bold">{props.degrees}, {props.major}</div>
+        <div className="pt-2 text-[#231F20] text-xl font-sans font-bold">
+            Aspirations: <span className="text-[#231F20] text-lg font-serif font-normal">{props.aspiration}</span>
+        </div>
+        <div className="pt-2 text-[#231F20] text-xl font-bold font-sans">
+            Class Comment: <span className="text-[#231F20] text-lg font-serif font-normal">{props.course_comment}</span>
+        </div>
     </>);
 }
 
@@ -105,10 +87,9 @@ export type TeamProjectSponsorsProps = {
 }
 export function TeamProjectSponsors( props: TeamProjectSponsorsProps ) {
     return (<>
-        <p className={`${style.s7} text-align: center;`}>
-            PROJECT SPONSOR:
-            <span className="sponsor-name">{ props.sponsor_names.join(', ') }</span>
-        </p>
+        <div className="text-[#939598] text-center">
+            PROJECT SPONSOR: <span className="text-[#83003F]">{ props.sponsor_names.join(', ') }</span>
+        </div>
     </>);
 }
 
@@ -124,22 +105,17 @@ export type TeamBrochureProps = {
 }
 export default function TeamBrochure( props: TeamBrochureProps ) {
     return (<>
-        {/* <Head>
-            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-            <title>{props.project_name}</title>
-        </Head>
-        <body> */}
-        <div className="grid grid-cols-1 gap-4">
+        <div className="p-5 grid grid-cols-1 gap-4">
 
             {/* Project name */}
-            <div className="text-5xl text-[#83003F]">{props.project_name}</div>
+            <div className="mb-3 text-5xl text-[#83003F] text-center font-bold font-mono">{props.project_name}</div>
 
             {/* Project info */}
-            <div className="grid grid-cols-2 gap-4">
-                <div>
+            <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-1">
                     <TeamBrochurePhoto sme_names={props.sme_names} team_photo_names={props.team_photo_names} team_photo_url={props.team_photo_url}/>
                 </div>
-                <div>
+                <div className="col-span-2 text-left">
                     <TeamChallenge project_summary={props.project_summary} />
                 </div>
             </div>
@@ -153,7 +129,6 @@ export default function TeamBrochure( props: TeamBrochureProps ) {
             <div>
                 <TeamProjectSponsors sponsor_names={props.sponsor_names}/>
             </div>
-        {/* </body> */}
         </div>
     </>);
 }
