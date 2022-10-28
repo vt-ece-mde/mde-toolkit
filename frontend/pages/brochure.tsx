@@ -58,7 +58,8 @@ const team: Team = {
             course_comment: lorem.generateParagraphs(1),
     })),
     team_photo_names: `LEFT TO RIGHT: ${(Array.from(Array(5).keys()).map(_ => lorem.generateWords(2))).join(', ')}`,
-    team_photo_url: "https://drive.google.com/uc?export=view&id=1cBsKbJqjt-g9VyJFYEMptLEgdbGBZk05",
+    // team_photo_url: "https://drive.google.com/uc?export=view&id=1cBsKbJqjt-g9VyJFYEMptLEgdbGBZk05",
+    team_photo_url: "https://loremflickr.com/640/360",
 }
 
 
