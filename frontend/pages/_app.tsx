@@ -24,12 +24,12 @@ function App({ Component, pageProps }: AppProps<{session: Session}>) {
     <>
     <SessionProvider session={pageProps.session}>
         <Head>
-            <title>MDE Toolkit</title>
+            <title>{ NAVBAR_TITLE }</title>
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
         </Head>
 
-        <Navbar title={NAVBAR_TITLE} menu_list={NAVBAR_MENU_LIST}/>
+        <Navbar title={ NAVBAR_TITLE } menu_list={ NAVBAR_MENU_LIST }/>
 
         <Component {...pageProps} />
 
