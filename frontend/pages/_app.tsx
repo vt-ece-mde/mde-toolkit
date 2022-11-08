@@ -16,7 +16,7 @@ const NAVBAR_MENU_LIST = [
     { text: "Expo Team Dirs", href: "/expo/team-dirs" },
 ];
 
-function MyApp({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppProps) {
     return (
     <>
     <Head>
@@ -34,4 +34,4 @@ function MyApp({ Component, pageProps }: AppProps) {
     );
 }
 
-export default MyApp
+export default App
