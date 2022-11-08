@@ -4,14 +4,14 @@ import '../styles/globals.css'
 import Head from "next/head";
 import Script from "next/script"
 import type { AppProps } from 'next/app'
-import Navbar from '../components/navbar';
+import Navbar, { NavItem } from '../components/navbar';
 
 import { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 
 // Navbar elements.
 const NAVBAR_TITLE = "MDE Toolkit";
-const NAVBAR_MENU_LIST = [
+const NAVBAR_MENU_LIST: NavItem[] = [
     { text: "Home", href: "/" },
     { text: "Courses", href: "/courses" },
     { text: "Students", href: "/students" },
