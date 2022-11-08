@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 
 export type NavItem = {
@@ -14,6 +16,9 @@ type NarbarProps = {
 
 // See guide: https://www.youtube.com/watch?v=miiPsBlqMns&ab_channel=DigitalOcean
 export default function Navbar({ title, menu_list }: NarbarProps ) {
+
+    const { data: session, status } = useSession()
+
     return (
         <nav className="bg-gray-100">
             <div className="border border-red-500">
@@ -41,9 +46,31 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
 
                     {/* (at right) Secondary nav */}
                     <div className="flex items-center space-x-3">
-                        <Link href="/login">
-                            <a className="py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 hover:text-yellow-800 rounded transition duration-300">Login</a>
-                        </Link>
+
+                        {/* Show login button if not authenticated */}
+                        { !session && (
+                            <Link href="/api/auth/signin">
+                                <a className="py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 hover:text-yellow-800 rounded transition duration-300" onClick={ e => {
+                                    e.preventDefault()
+                                    signIn()
+                                } }>Login</a>
+                            </Link>
+                        )}
+
+                        {/* Show user info and logout button if authenticated */}
+                        { session && (<>
+                            <div className='text-center'>
+                                <Image src={session.user?.image ? session.user?.image : "#"} className="rounded-full" width={50} height={50} title={ `Logged into Google as: ${session.user?.name ? session.user?.name : "undefined"}` }/>
+                                <div className='text-sm'>{session.user?.name ? session.user?.name : "undefined"}</div>
+                                <div className='text-xs'>{session.user?.email ? session.user?.email : "undefined"}</div>
+                            </div>
+                            <Link href="/api/auth/signout">
+                                <a className="py-2 px-3 bg-red-400 hover:bg-red-300 text-red-900 hover:text-red-800 rounded transition duration-300" onClick={ e => {
+                                    e.preventDefault()
+                                    signOut()
+                                }}>Logout</a>
+                            </Link>
+                        </>)}
                     </div>
                 </div>
             </div>
