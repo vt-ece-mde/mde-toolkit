@@ -1,6 +1,8 @@
-import TeamBrochure from '../components/TeamBrochure'
+import TeamBrochure from '../components/TeamBrochure';
 import { LoremIpsum } from "lorem-ipsum";
-import { renderToStaticMarkup } from 'react-dom/server'
+import { renderToStaticMarkup } from 'react-dom/server';
+import { useDropzone } from 'react-dropzone';
+import TeamDropZone from '../components/teamdropzone';
 
 const lorem = new LoremIpsum({
     sentencesPerParagraph: {
@@ -97,10 +99,22 @@ export default function Brochure() {
         element.click();
     }
 
+    const team_files = (files: File[]) => {
+        for (let i = 0; i < files.length; i++) {
+            console.log(`[${i}] ${files[i]}`)
+        }
+    }
+
 
     return (<>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={ download_html }>hello</button>
-        {component}
+        <div className="m-8">
+            <TeamDropZone onSubmit={team_files} />
+        </div>
+        <div>
+            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={ download_html }>Download as HTML</button>
+
+            {component}
+        </div>
     </>);
     // return (<TeamBrochure {...team}/>);
 }
