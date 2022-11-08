@@ -5,6 +5,7 @@ import Head from "next/head";
 import Script from "next/script"
 import type { AppProps } from 'next/app'
 import Navbar, { NavItem } from '../components/navbar';
+import { useRouter } from 'next/router';
 
 import { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
@@ -20,6 +21,11 @@ const NAVBAR_MENU_LIST: NavItem[] = [
 ];
 
 function App({ Component, pageProps }: AppProps<{session: Session}>) {
+
+    const router = useRouter();
+    const showNavbar = router.pathname.startsWith('/auth/') ? false : true;
+    const menu_list = pageProps.session ? NAVBAR_MENU_LIST : [];
+
     return (
     <>
     <SessionProvider session={pageProps.session}>
@@ -29,7 +35,9 @@ function App({ Component, pageProps }: AppProps<{session: Session}>) {
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
         </Head>
 
-        <Navbar title={ NAVBAR_TITLE } menu_list={ NAVBAR_MENU_LIST }/>
+        {/* Conditionally render the navbar (useful for hiding on signin page) */}
+        {/* {showNavbar && <Navbar title={ NAVBAR_TITLE } menu_list={ menu_list }/>} */}
+        <Navbar title={ NAVBAR_TITLE } menu_list={ menu_list }/>
 
         <Component {...pageProps} />
 
