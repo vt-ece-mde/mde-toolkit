@@ -8,7 +8,7 @@ import Navbar, { NavItem } from '../components/navbar';
 import { useRouter } from 'next/router';
 
 import { Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 
 // Navbar elements.
 const NAVBAR_TITLE = "MDE Toolkit";
@@ -24,7 +24,6 @@ function App({ Component, pageProps }: AppProps<{session: Session}>) {
 
     const router = useRouter();
     const showNavbar = router.pathname.startsWith('/auth/') ? false : true;
-    const menu_list = pageProps.session ? NAVBAR_MENU_LIST : [];
 
     return (
     <>
@@ -37,7 +36,7 @@ function App({ Component, pageProps }: AppProps<{session: Session}>) {
 
         {/* Conditionally render the navbar (useful for hiding on signin page) */}
         {/* {showNavbar && <Navbar title={ NAVBAR_TITLE } menu_list={ menu_list }/>} */}
-        <Navbar title={ NAVBAR_TITLE } menu_list={ menu_list }/>
+        <Navbar title={ NAVBAR_TITLE } menu_list={ NAVBAR_MENU_LIST }/>
 
         <Component {...pageProps} />
 

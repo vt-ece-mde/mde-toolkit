@@ -22,6 +22,11 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
 
     const { data: session, status } = useSession()
 
+    // Override navbar items if user is not logged in.
+    if (!session) {
+        menu_list = [];
+    }
+
     return (
         <nav className="bg-gray-100">
             <div className="border border-red-500">
