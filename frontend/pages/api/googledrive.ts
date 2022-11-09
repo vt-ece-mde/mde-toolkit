@@ -8,8 +8,8 @@ import { drive_v3, google } from "googleapis";
 // import drive from "@googleapis/drive";
 
 import type { AuthSession } from '../../lib/auth';
-import { csv2arr } from '../../lib/parsing';
-import { delimiter } from 'path';
+
+import { listFoldersInFolder, listFilesInFolder, parseDriveCSV } from '../../lib/googledrive';
 
 
 
@@ -29,71 +29,71 @@ const scopes = [
 // }
 
 
-// Read contents of team names file and parse.
-async function parseDriveCSV(client: drive_v3.Drive, fileId: string, mimeType: string): Promise<string[][]> {
+// // Read contents of team names file and parse.
+// async function parseDriveCSV(client: drive_v3.Drive, fileId: string, mimeType: string): Promise<string[][]> {
 
-    // Download CSV.
-    var data = '';
-    if (mimeType === 'text/csv') {
-        const res = await client.files.get({
-            supportsAllDrives: true,
-            fileId: fileId,
-            alt: 'media', // Denotes download.
-        })
-        // console.log(`res? ${JSON.stringify(res)}`)
-        data = (res.data as string);
-    }
+//     // Download CSV.
+//     var data = '';
+//     if (mimeType === 'text/csv') {
+//         const res = await client.files.get({
+//             supportsAllDrives: true,
+//             fileId: fileId,
+//             alt: 'media', // Denotes download.
+//         })
+//         // console.log(`res? ${JSON.stringify(res)}`)
+//         data = (res.data as string);
+//     }
 
-    // Download spreadsheet as CSV.
-    else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-        const res = await client.files.export({
-            fileId: fileId,
-            mimeType: 'text/csv', // Force download as CSV.
-        })
-        // console.log(`res? ${JSON.stringify(res)}`)
-        data = (res.data as string);
-    }
-    // console.log(`data? ${JSON.stringify(data)}`)
+//     // Download spreadsheet as CSV.
+//     else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+//         const res = await client.files.export({
+//             fileId: fileId,
+//             mimeType: 'text/csv', // Force download as CSV.
+//         })
+//         // console.log(`res? ${JSON.stringify(res)}`)
+//         data = (res.data as string);
+//     }
+//     // console.log(`data? ${JSON.stringify(data)}`)
 
-    // Parse CSV contents into rows.
-    const rows = csv2arr(data, ',');
-    return rows
-}
+//     // Parse CSV contents into rows.
+//     const rows = csv2arr(data, ',');
+//     return rows
+// }
 
 
-async function listFilesInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+// async function listFilesInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
 
-    const mimeTypes = [
-        'text/plain',
-    ]
-    const res = await client.files.list({
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        // q: `'${folderId}' in parents and (mimeType = 'text/plain' or )`,
-        q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder'`,
-    })
-    const files = res.data.files;
-    if (files?.length) {
-        return files;
-    } else {
-        return [];
-    }
+//     const mimeTypes = [
+//         'text/plain',
+//     ]
+//     const res = await client.files.list({
+//         supportsAllDrives: true,
+//         includeItemsFromAllDrives: true,
+//         // q: `'${folderId}' in parents and (mimeType = 'text/plain' or )`,
+//         q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder'`,
+//     })
+//     const files = res.data.files;
+//     if (files?.length) {
+//         return files;
+//     } else {
+//         return [];
+//     }
 
-}
+// }
 
-async function listFoldersInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
-    const res = await client.files.list({
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
-    })
-    const files = res.data.files;
-    if (files?.length) {
-        return files;
-    } else {
-        return [];
-    }
-}
+// async function listFoldersInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+//     const res = await client.files.list({
+//         supportsAllDrives: true,
+//         includeItemsFromAllDrives: true,
+//         q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
+//     })
+//     const files = res.data.files;
+//     if (files?.length) {
+//         return files;
+//     } else {
+//         return [];
+//     }
+// }
 
 
 
@@ -111,6 +111,9 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<Data>
 ) {
+
+    // Unpack query parameters.
+    const { folderId } = req.query.folderId ? req.query : { folderId: null }
 
     const session: AuthSession|null = await unstable_getServerSession(req, res, (authOptions as NextAuthOptions))
 
