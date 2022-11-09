@@ -8,6 +8,8 @@ import { drive_v3, google } from "googleapis";
 // import drive from "@googleapis/drive";
 
 import type { AuthSession } from '../../lib/auth';
+import { csv2arr } from '../../lib/parsing';
+import { delimiter } from 'path';
 
 
 
@@ -27,7 +29,39 @@ const scopes = [
 // }
 
 
-async function processTeamFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+// Read contents of team names file and parse.
+async function parseDriveCSV(client: drive_v3.Drive, fileId: string, mimeType: string): Promise<string[][]> {
+
+    // Download CSV.
+    var data = '';
+    if (mimeType === 'text/csv') {
+        const res = await client.files.get({
+            supportsAllDrives: true,
+            fileId: fileId,
+            alt: 'media', // Denotes download.
+        })
+        // console.log(`res? ${JSON.stringify(res)}`)
+        data = (res.data as string);
+    }
+
+    // Download spreadsheet as CSV.
+    else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+        const res = await client.files.export({
+            fileId: fileId,
+            mimeType: 'text/csv', // Force download as CSV.
+        })
+        // console.log(`res? ${JSON.stringify(res)}`)
+        data = (res.data as string);
+    }
+    // console.log(`data? ${JSON.stringify(data)}`)
+
+    // Parse CSV contents into rows.
+    const rows = csv2arr(data, ',');
+    return rows
+}
+
+
+async function listFilesInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
 
     const mimeTypes = [
         'text/plain',
@@ -47,7 +81,7 @@ async function processTeamFolder(client: drive_v3.Drive, folderId: string): Prom
 
 }
 
-async function processExpoTeamRoot(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+async function listFoldersInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
     const res = await client.files.list({
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
@@ -65,12 +99,12 @@ async function processExpoTeamRoot(client: drive_v3.Drive, folderId: string): Pr
 
 // https://github.com/nextauthjs/next-auth/issues/1162#issuecomment-766331341
 
-interface TeamBlob {
-    team_root: drive_v3.Schema$File;
-    team_files: drive_v3.Schema$File[];
+interface FolderBlob {
+    root: drive_v3.Schema$File;
+    files: drive_v3.Schema$File[];
 }
 interface Data {
-    teams: TeamBlob[];
+    blobs: FolderBlob[];
 }
 
 export default async function handler(
@@ -89,7 +123,7 @@ export default async function handler(
     // const nextAuthSecret = process.env.NEXTAUTH_SECRET;
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
-    // const redirectUri = "http://localhost:3000/api/auth/callback/google"
+    const redirectUri = "http://localhost:3000/api/auth/callback/google"
 
     // const token = await getToken({ req, secret: nextAuthSecret });
     // console.log(token)
@@ -104,7 +138,7 @@ export default async function handler(
     // const auth = new google.auth.OAuth2({
     //     clientId,
     //     clientSecret,
-    //     // redirectUri
+    //     redirectUri
     // });
     const auth = new google.auth.OAuth2();
     auth.setCredentials({
@@ -117,22 +151,28 @@ export default async function handler(
 
     const folder_id = "1D4SAg0_t_s9vrkiwSJEoWZFF_OiG-G29";
 
-    const teamFolders = await processExpoTeamRoot(client, folder_id)
 
-    var teams: TeamBlob[] = []
-    for (let index = 0; index < teamFolders.length; index++) {
-        const team_root = teamFolders[index];
-        if (team_root.id) {
-            const team_files = await processTeamFolder(client, team_root.id)
-            teams.push({
-                team_root: team_root,
-                team_files: team_files,
-            })
-        }
-        // break;
-    }
+    var blobs: FolderBlob[] = [];
 
-    res.status(200).json({teams})
+    // const parentFolders = await listFoldersInFolder(client, folder_id)
+    // for (let index = 0; index < parentFolders.length; index++) {
+    //     const root = parentFolders[index];
+    //     if (root.id) {
+    //         const files = await listFilesInFolder(client, root.id)
+    //         blobs.push({
+    //             root: root,
+    //             files: files,
+    //         })
+    //     }
+    //     // break;
+    // }
+
+    const rows = await parseDriveCSV(client, "1Ke9FNG8R-nU2hEZvks-51xSXTs4MgaEY", "text/csv")
+    // const rows = await parseDriveCSV(client, "1sTTBQREkxEx6oTeV2yKwaOfNxGcdBci02324M6L_V-g", "application/vnd.google-apps.spreadsheet")
+
+    console.log(`rows? ${JSON.stringify(rows)}`)
+
+    res.status(200).json({blobs})
 
 
     // try {
