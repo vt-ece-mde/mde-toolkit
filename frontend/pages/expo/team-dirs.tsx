@@ -43,7 +43,7 @@ function Form(props: FormProps) {
         <form className="needs-validation" onSubmit={ onSubmit }>
         {/* Course ID selector. */}
         <CourseIdInput course_list={props.course_list} onChange={setCourseId}/>
-        <button type="submit" className="btn btn-success" disabled={ !validForm }>Download Zip</button>
+        <button type="submit" className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800" disabled={ !validForm }>Download Zip</button>
     </form>
     );
 }

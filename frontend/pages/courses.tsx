@@ -20,12 +20,12 @@ function Form({ course_id, onSubmit }: FormProps) {
     return (
         <form className="needs-validation" onSubmit={ onSubmit }>
         <div className="mb-3 mt-3">
-            <div className="input-group mb-3">
+            <div className="input-group mb-3 w-50">
                 <span className="input-group-text" id="basic-addon1">Course ID</span>
                 <input type="text" className="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value={ course_id } />
             </div>
         </div>
-        <button type="submit" className="btn btn-primary">Get Courses</button>
+        <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Get Courses</button>
     </form>
     );
 }

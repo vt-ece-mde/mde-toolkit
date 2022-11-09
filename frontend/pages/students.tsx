@@ -53,7 +53,7 @@ function Form(props: FormProps) {
             {/* Course ID selector. */}
             <CourseIdInput course_list={props.course_list} onChange={setCourseId}/>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={ !validForm }>Get Students</button>
+        <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" disabled={ !validForm }>Get Students</button>
     </form>
     );
 }
