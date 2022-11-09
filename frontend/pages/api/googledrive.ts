@@ -5,6 +5,7 @@ import { NextAuthOptions } from "next-auth"
 import { authOptions } from "./auth/[...nextauth]"
 
 import { google } from "googleapis";
+// import drive from "@googleapis/drive";
 
 import type { AuthSession } from '../../lib/auth';
 
@@ -39,12 +40,12 @@ export default async function handler(
     console.log(session?.user?.email)
 
 
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+    // const clientId = process.env.GOOGLE_CLIENT_ID;
+    // const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    // const nextAuthSecret = process.env.NEXTAUTH_SECRET;
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
-    const redirectUri = "http://localhost:3000/api/auth/callback/google"
+    // const redirectUri = "http://localhost:3000/api/auth/callback/google"
 
     // const token = await getToken({ req, secret: nextAuthSecret });
     // console.log(token)
@@ -56,22 +57,23 @@ export default async function handler(
         res.status(401);
     }
 
-    const auth = new google.auth.OAuth2({
-        clientId,
-        clientSecret,
-        redirectUri
-    });
+    // const auth = new google.auth.OAuth2({
+    //     clientId,
+    //     clientSecret,
+    //     // redirectUri
+    // });
+    const auth = new google.auth.OAuth2();
     auth.setCredentials({
         access_token: access_token,
         refresh_token: refresh_token,
-        scope: scopes.join(" "),
+        // scope: scopes.join(" "),
     });
 
-    const drive = google.drive({ auth, version: "v3" });
+    const client = google.drive({ auth, version: "v3" });
 
     try {
         // const dres = await drive.files.list({ spaces: "appDataFolder" })
-        const dres = await drive.files.list()
+        const dres = await client.files.list()
         const files = dres.data.files;
         if (files?.length) {
             files.map((file) => {
