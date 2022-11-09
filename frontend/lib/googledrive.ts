@@ -33,16 +33,16 @@ export async function parseDriveCSV(client: drive_v3.Drive, fileId: string, mime
 }
 
 
-export async function listFilesInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+export async function listQuery(args: {client: drive_v3.Drive, query: string, supportsAllDrives?: boolean, includeItemsFromAllDrives?: boolean }): Promise<drive_v3.Schema$File[]> {
 
-    const mimeTypes = [
-        'text/plain',
-    ]
-    const res = await client.files.list({
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        // q: `'${folderId}' in parents and (mimeType = 'text/plain' or )`,
-        q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder'`,
+    // Set defaults.
+    args.supportsAllDrives = args.supportsAllDrives ? args.supportsAllDrives : true;
+    args.includeItemsFromAllDrives = args.includeItemsFromAllDrives ? args.includeItemsFromAllDrives : true;
+
+    const res = await args.client.files.list({
+        supportsAllDrives: args.supportsAllDrives,
+        includeItemsFromAllDrives: args.includeItemsFromAllDrives,
+        q: args.query,
     })
     const files = res.data.files;
     if (files?.length) {
@@ -50,19 +50,36 @@ export async function listFilesInFolder(client: drive_v3.Drive, folderId: string
     } else {
         return [];
     }
+}
 
+
+export async function listInFolder(args: {client: drive_v3.Drive, folderId: string, mimeType?: string, mimeTypeQuery?: string}): Promise<drive_v3.Schema$File[]> {
+
+    // Build query.
+    var query: string = `'${args.folderId}' in parents`;
+    if (args.mimeType) {
+        query = `${query} and mimeType = '${args.mimeType}'`
+    } else if (args.mimeTypeQuery) {
+        query = `${query} and ${args.mimeTypeQuery}`
+    }
+
+    return await listQuery({ 
+        query: query, 
+        client: args.client,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+    })
+}
+
+
+export async function listFilesInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+    return await listInFolder({ client, folderId, mimeTypeQuery: "mimeType != 'application/vnd.google-apps.folder'"})
 }
 
 export async function listFoldersInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
-    const res = await client.files.list({
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        q: `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder'`,
-    })
-    const files = res.data.files;
-    if (files?.length) {
-        return files;
-    } else {
-        return [];
-    }
+    return await listInFolder({ client, folderId, mimeTypeQuery: "mimeType = 'application/vnd.google-apps.folder'"})
+}
+
+export async function listAllInFolder(client: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+    return await listInFolder({ client, folderId })
 }
