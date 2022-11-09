@@ -34,12 +34,14 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
                     <div className="flex space-x-2">
                         {/* (at left, left) Logo */}
                         <div className="py-4 px-3">
-                            <a href="#" className="flex items-center text-gray-700 hover:text-gray-900">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 mr-1 fill-yellow-300">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                                </svg>
-                                <span className="font-bold">{ title }</span>
-                            </a>
+                            <Link href="/">
+                                <a className="flex items-center text-gray-700 hover:text-gray-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 mr-1 fill-yellow-300">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                    </svg>
+                                    <span className="font-bold">{ title }</span>
+                                </a>
+                            </Link>
                         </div>
 
                         {/* (at left, right) Primary nav */}

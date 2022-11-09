@@ -13,7 +13,6 @@ import { SessionProvider, useSession } from "next-auth/react";
 // Navbar elements.
 const NAVBAR_TITLE = "MDE Toolkit";
 const NAVBAR_MENU_LIST: NavItem[] = [
-    { text: "Home", href: "/" },
     { text: "Courses", href: "/courses" },
     { text: "Students", href: "/students" },
     { text: "IPR History Spreadsheet", href: "/ipr-history-spreadsheet" },
