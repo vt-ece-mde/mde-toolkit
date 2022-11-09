@@ -138,9 +138,9 @@ function Form(props: FormProps) {
 
     const renderFeedbackRoundInputElement = (): any => {
         return (
-            <div className="input-group mb-3">
+            <div className="input-group mb-3 w-75">
                 <span className="input-group-text">Number of Feedback Rounds</span>
-                <input type="number" pattern="[0-9]*" min="1" step="1" className="form-control" placeholder="Enter either a URL or an integer value" name="n_feedback" value={ numFeedback } onChange={e => setNumFeedback(e.target.value)} required />
+                <input type="number" pattern="[0-9]*" min="1" step="1" className="form-control" placeholder="Enter an integer value" name="n_feedback" value={ numFeedback } onChange={e => setNumFeedback(e.target.value)} required />
             </div>
         );
     }

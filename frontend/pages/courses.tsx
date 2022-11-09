@@ -20,7 +20,7 @@ function Form({ course_id, onSubmit }: FormProps) {
     return (
         <form className="needs-validation" onSubmit={ onSubmit }>
         <div className="mb-3 mt-3">
-            <div className="input-group mb-3">
+            <div className="input-group mb-3 w-50">
                 <span className="input-group-text" id="basic-addon1">Course ID</span>
                 <input type="text" className="form-control" id="course_id" placeholder="Enter either a URL or an integer value" name="course_id" value={ course_id } />
             </div>
