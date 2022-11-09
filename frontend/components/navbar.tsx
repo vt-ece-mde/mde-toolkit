@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { Session } from 'next-auth';
+import { Fragment } from 'react';
+import { Menu, Transition } from '@headlessui/react';
 
 
 export type NavItem = {
@@ -45,7 +48,7 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
                     </div>
 
                     {/* (at right) Secondary nav */}
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 pr-4">
 
                         {/* Show login button if not authenticated */}
                         { !session && (
@@ -59,21 +62,75 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
 
                         {/* Show user info and logout button if authenticated */}
                         { session && (<>
-                            <div className='text-center'>
-                                <Image src={session.user?.image ? session.user?.image : "#"} className="rounded-full" width={50} height={50} title={ `Logged into Google as: ${session.user?.name ? session.user?.name : "undefined"}` }/>
-                                <div className='text-sm'>{session.user?.name ? session.user?.name : "undefined"}</div>
-                                <div className='text-xs'>{session.user?.email ? session.user?.email : "undefined"}</div>
-                            </div>
-                            <Link href="/api/auth/signout">
-                                <a className="py-2 px-3 bg-red-400 hover:bg-red-300 text-red-900 hover:text-red-800 rounded transition duration-300" onClick={ e => {
-                                    e.preventDefault()
-                                    signOut()
-                                }}>Logout</a>
-                            </Link>
+                            <UserDropdown session={session}/>
                         </>)}
                     </div>
                 </div>
             </div>
         </nav>
     );
+}
+
+
+interface UserDropDownProps {
+    session: Session;
+}
+function UserDropdown({ session }: UserDropDownProps) {
+    return (<>
+        <div>
+            <Menu as="div" className="relative inline-block text-left">
+                <div>
+                    <Menu.Button>
+                        <Image src={session.user?.image ? session.user?.image : "#"} className="rounded-full" width={50} height={50} title={ `Logged into Google as: ${session.user?.name ? session.user?.name : "undefined"}` }/>
+                    </Menu.Button>
+                </div>
+                <div>
+                <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+                >
+                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="px-1 py-1 ">
+                        <Menu.Item>
+                            {({ active }) => (
+                                <div className='block px-4 py-2 text-sm text-gray-500 rounded-lg'>
+                                <div className='text-sm'>{session.user?.name ? session.user?.name : "undefined"}</div>
+                                <div className='text-xs'>{session.user?.email ? session.user?.email : "undefined"}</div>
+                            </div>
+                            )}
+                        </Menu.Item>
+                    </div>
+                    <div className="px-1 py-1 ">
+                        <Menu.Item>
+                            {({ active }) => (
+                                <Link href="/api/auth/signin">
+                                    <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-700" onClick={ e => {
+                                        e.preventDefault()
+                                        signIn()
+                                    } }>Switch Accounts</a>
+                                </Link>
+                            )}
+                        </Menu.Item>
+                        <Menu.Item>
+                            {({ active }) => (
+                                <Link href="/api/auth/signout">
+                                    <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-700" onClick={ e => {
+                                        e.preventDefault()
+                                        signOut()
+                                    }}>Logout</a>
+                                </Link>
+                            )}
+                        </Menu.Item>
+                    </div>
+                </Menu.Items>
+                </Transition>
+                </div>
+            </Menu>
+        </div>
+    </>);
 }
