@@ -6,19 +6,26 @@ const scopes = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/drive",
+    // "https://www.googleapis.com/auth/drive.file",
+    // "https://www.googleapis.com/auth/drive.readonly",
+    // "https://www.googleapis.com/auth/drive.metadata.readonly",
+    // "https://www.googleapis.com/auth/drive.appdata",
+    // "https://www.googleapis.com/auth/drive.metadata",
+    // "https://www.googleapis.com/auth/drive.photos.readonly",
 ];
-export default NextAuth({
+
+export const authOptions = {
     // Configure one or more authentication providers
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            scope: scopes.join(" "),
             authorization: {
                 params: {
                     prompt: "consent",
                     access_type: "offline",
-                    response_type: "code"
+                    response_type: "code",
+                    scope: scopes.join(" "),
                 }
             }
         }),
@@ -58,4 +65,6 @@ export default NextAuth({
             return session
         }
     },
-})
+}
+
+export default NextAuth(authOptions)
