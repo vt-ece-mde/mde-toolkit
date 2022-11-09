@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",
+    "googleapis": "^109.0.1",
     "next": "12.3.0",
     "next-auth": "^4.16.4",
     "parse-link-header": "^2.0.0",
