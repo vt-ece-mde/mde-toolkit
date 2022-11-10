@@ -1,31 +1,34 @@
 import { drive_v3 } from "googleapis";
 import { csv2arr } from "./parsing";
 
+export const MimeTypesCSV = ['text/csv', 'application/vnd.google-apps.spreadsheet'] as const;
+export type MimeTypesCSV = (typeof MimeTypesCSV)[number]; // This is both a constant list and a type.
+export const MimeTypesSupported = MimeTypesCSV;
+export type MimeTypesSupported = (typeof MimeTypesSupported)[number]; // Extends all possible mime types.
+
+
 // Read contents of team names file and parse.
-export async function parseDriveCSV(client: drive_v3.Drive, fileId: string, mimeType: string): Promise<string[][]> {
+export async function parseDriveCSV(args: {client: drive_v3.Drive, fileId: string, mimeType: MimeTypesCSV }): Promise<string[][]> {
 
     // Download CSV.
     var data = '';
-    if (mimeType === 'text/csv') {
-        const res = await client.files.get({
+    if (args.mimeType === 'text/csv') {
+        const res = await args.client.files.get({
             supportsAllDrives: true,
-            fileId: fileId,
+            fileId: args.fileId,
             alt: 'media', // Denotes download.
         })
-        // console.log(`res? ${JSON.stringify(res)}`)
         data = (res.data as string);
     }
 
     // Download spreadsheet as CSV.
-    else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-        const res = await client.files.export({
-            fileId: fileId,
+    else if (args.mimeType === 'application/vnd.google-apps.spreadsheet') {
+        const res = await args.client.files.export({
+            fileId: args.fileId,
             mimeType: 'text/csv', // Force download as CSV.
         })
-        // console.log(`res? ${JSON.stringify(res)}`)
         data = (res.data as string);
     }
-    // console.log(`data? ${JSON.stringify(data)}`)
 
     // Parse CSV contents into rows.
     const rows = csv2arr(data, ',');
