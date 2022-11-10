@@ -109,16 +109,20 @@ interface Data {
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<Data>
+    res: NextApiResponse,
 ) {
+
+    res.status(401).json({ message: "this endpoint is no longer supported" });
+    return;
 
     // Unpack query parameters.
     const { folderId } = req.query.folderId ? req.query : { folderId: null }
 
     const session: AuthSession|null = await unstable_getServerSession(req, res, (authOptions as NextAuthOptions))
 
-    console.log(session?.user?.name)
-    console.log(session?.user?.email)
+    if (!session) {
+        res.status(401);
+    }
 
 
     // const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -130,13 +134,6 @@ export default async function handler(
 
     // const token = await getToken({ req, secret: nextAuthSecret });
     // console.log(token)
-
-    console.log(scopes.join(" "))
-
-
-    if (!session) {
-        res.status(401);
-    }
 
     // const auth = new google.auth.OAuth2({
     //     clientId,
@@ -170,12 +167,12 @@ export default async function handler(
     //     // break;
     // }
 
-    const rows = await parseDriveCSV(client, "1Ke9FNG8R-nU2hEZvks-51xSXTs4MgaEY", "text/csv")
-    // const rows = await parseDriveCSV(client, "1sTTBQREkxEx6oTeV2yKwaOfNxGcdBci02324M6L_V-g", "application/vnd.google-apps.spreadsheet")
+    // const rows = await parseDriveCSV(client, "1Ke9FNG8R-nU2hEZvks-51xSXTs4MgaEY", "text/csv")
+    // // const rows = await parseDriveCSV(client, "1sTTBQREkxEx6oTeV2yKwaOfNxGcdBci02324M6L_V-g", "application/vnd.google-apps.spreadsheet")
 
-    console.log(`rows? ${JSON.stringify(rows)}`)
+    // console.log(`rows? ${JSON.stringify(rows)}`)
 
-    res.status(200).json({blobs})
+    // res.status(200).json({blobs})
 
 
     // try {
