@@ -14,6 +14,50 @@ const scopes = [
     // "https://www.googleapis.com/auth/drive.photos.readonly",
 ];
 
+async function refreshAccessToken(token) {
+    try {
+        const url = "https://oauth2.googleapis.com/token?" + new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET,
+            grant_type: "refresh_token",
+            refresh_token: token.refresh_token,
+        })
+
+        const res = await fetch(url, {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method: "POST",
+        })
+
+        const refreshed_tokens = await res.json()
+        console.log(`refreshed_tokens? ${JSON.stringify(refreshed_tokens)}`)
+
+        if (!res.ok) {
+            throw refreshed_tokens
+        }
+
+        const { error, ...rest } = token; // Destruct token and remove any previous error messages.
+
+        const t = {
+            ...rest, // was `token`
+            access_token: refreshed_tokens.access_token,
+            access_token_expires: Date.now() + refreshed_tokens.expires_in * 1_000 - 10_000, // 10 second buffer
+            refresh_token: refreshed_tokens.refresh_token ?? token.refresh_token, // Fall back to old refresh token.
+        }
+        console.log(`t? ${JSON.stringify(t)}`)
+        return t
+    } catch (error) {
+        console.log(`ERROR`)
+        console.log(error)
+
+        return {
+            ...token,
+            error: "RefreshAccessTokenError",
+        }
+    }
+}
+
 export const authOptions = {
     // Configure one or more authentication providers
     providers: [
@@ -48,20 +92,36 @@ export const authOptions = {
         },
         async jwt({ token, user, account, profile, isNewUser }) {
 
-            // Add access_token to the token right after signin.
-            if (account?.access_token) {
-                token.access_token = account.access_token
+            // console.log(`token? ${JSON.stringify(token)}`)
+            // console.log(`user? ${JSON.stringify(user)}`)
+            // console.log(`account? ${JSON.stringify(account)}`)
+            // console.log(`profile? ${JSON.stringify(profile)}`)
+            // console.log(`isNewUser? ${JSON.stringify(isNewUser)}`)
+
+            // Initial sign in.
+            if (account && user) {
+                return {
+                    access_token: account.access_token,
+                    access_token_expires: Date.now() + account.expires_in * 1_000 -  10_000, // 10 second buffer
+                    refresh_token: account.refresh_token,
+                    user,
+                }
             }
-            // Add refresh_token to the token right after signin.
-            if (account?.refresh_token) {
-                token.refresh_token = account.refresh_token
+
+            // Return previous token if the access has not expired yet.
+            if (Date.now() < token.access_token_expires) {
+                return token
             }
-            return token;
-          },
-        async session({ session, token, user }) {
+
+            // Access token has expired, try to update it.
+            return refreshAccessToken(token)
+        },
+        async session({ session, token }) {
             // Add properties to session, like an access_token from a provider.
+            session.user = token.user
             session.access_token = token.access_token
             session.refresh_token = token.refresh_token
+            session.error = token.error
             return session
         }
     },
