@@ -4,6 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
+import { useRouter } from 'next/router';
 
 
 export type NavItem = {
@@ -19,6 +20,8 @@ type NarbarProps = {
 
 // See guide: https://www.youtube.com/watch?v=miiPsBlqMns&ab_channel=DigitalOcean
 export default function Navbar({ title, menu_list }: NarbarProps ) {
+
+    const router = useRouter();
 
     const { data: session, status } = useSession()
 
@@ -83,6 +86,9 @@ interface UserDropDownProps {
     session: Session;
 }
 function UserDropdown({ session }: UserDropDownProps) {
+
+    const router = useRouter();
+
     console.log(`session? ${JSON.stringify(session)}`)
     return (<>
         <div>
@@ -131,7 +137,7 @@ function UserDropdown({ session }: UserDropDownProps) {
                                 <Link href="/api/auth/signin">
                                     <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-700" onClick={ e => {
                                         e.preventDefault()
-                                        signIn()
+                                        signIn("google", { callbackUrl: router.pathname })
                                     } }>Switch Accounts</a>
                                 </Link>
                             )}
@@ -141,7 +147,7 @@ function UserDropdown({ session }: UserDropDownProps) {
                                 <Link href="/api/auth/signout">
                                     <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-700" onClick={ e => {
                                         e.preventDefault()
-                                        signOut()
+                                        signOut({ callbackUrl: '/auth/signin?' + new URLSearchParams({ redirect: router.pathname })})
                                     }}>Logout</a>
                                 </Link>
                             )}
