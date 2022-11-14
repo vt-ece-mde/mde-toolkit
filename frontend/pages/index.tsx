@@ -24,7 +24,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     const session = await getSession({ req });
 
     // Redirect to signin page.
-    if (!session) {
+    if (!session || session?.error === "RefreshAccessTokenError") {
+    // if (!session) {
         return {
             redirect: { destination: '/auth/signin', permanent: false },
         }

@@ -1,13 +1,11 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { unstable_getServerSession } from "next-auth/next"
-import { NextAuthOptions } from "next-auth"
+import { NextAuthOptions, Session } from "next-auth"
 import { authOptions } from "./auth/[...nextauth]"
 
 import { drive_v3, google } from "googleapis";
 // import drive from "@googleapis/drive";
-
-import type { AuthSession } from '../../lib/auth';
 
 import { listFoldersInFolder, listFilesInFolder, parseDriveCSV } from '../../lib/googledrive';
 
@@ -118,7 +116,7 @@ export default async function handler(
     // Unpack query parameters.
     const { folderId } = req.query.folderId ? req.query : { folderId: null }
 
-    const session: AuthSession|null = await unstable_getServerSession(req, res, (authOptions as NextAuthOptions))
+    const session: Session|null = await unstable_getServerSession(req, res, (authOptions as NextAuthOptions))
 
     if (!session) {
         res.status(401);
