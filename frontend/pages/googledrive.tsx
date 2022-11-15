@@ -1,12 +1,15 @@
 import { getSession } from 'next-auth/react'
 import { GetServerSidePropsContext } from 'next';
-import { google } from "googleapis";
+import { drive_v3, google } from "googleapis";
 // import drive from "@googleapis/drive"
 
-import  { useEffect } from 'react';
+import  { useEffect, useState } from 'react';
 // import useDrivePicker from 'react-google-drive-picker'
+import { PickerCallback } from 'react-google-drive-picker/dist/typeDefs';
 import useDrivePicker from '../components/googledrivepicker'
 import { Session } from 'next-auth';
+
+import { listFoldersInFolder } from '../lib/googledrive';
 
 
 // import GooglePicker from 'react-google-picker';
@@ -18,15 +21,43 @@ import { Session } from 'next-auth';
 // ];
 
 
+
+
 export default function GoogleDrivePage({ session }: { session: Session }) {
 // export default function GoogleDrivePage({ drive }: { drive: drive_v3.Drive }) {
 
-
+    const [fileList, setFileList] = useState<drive_v3.Schema$File[]>([]);
 
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
 
     const [openPicker, authResponse] = useDrivePicker();  
+
+
+    const handlePickerSelection = async (data: PickerCallback) => {
+        if (data.action === 'cancel') {
+            console.log('User clicked cancel/close button')
+        } 
+        else if (data.action === 'picked') {
+            console.log(`data? ${JSON.stringify(data)}`)
+
+            if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
+                console.log('fetching')
+                const res = await fetch(`/api/google/drive/list/${data.docs[0].id}?` + new URLSearchParams({
+                    type: 'all', // 'all'|'files'|'folders'
+                }))
+                const j = await res.json()
+                console.log(`GOT RES: ${JSON.stringify(j)}`)
+                setFileList(j)
+            }
+        }
+        else if (data.action === 'loaded') {
+
+        }
+        console.log(data)
+    }
+
+
     // const customViewsArray = [new google.picker.DocsView()]; // custom view
     const handleOpenPicker = () => {
         openPicker({
@@ -37,18 +68,8 @@ export default function GoogleDrivePage({ session }: { session: Session }) {
             showUploadView: false,
             showUploadFolders: true,
             supportDrives: true,
-            multiselect: true,
-            customViews: [
-
-            ],
-            callbackFunction: (data) => {
-            if (data.action === 'cancel') {
-                console.log('User clicked cancel/close button')
-            } else {
-                console.log(`data? ${JSON.stringify(data)}`)
-            }
-            console.log(data)
-            },
+            multiselect: false,
+            callbackFunction: handlePickerSelection,
         })
     }
 
@@ -90,7 +111,12 @@ export default function GoogleDrivePage({ session }: { session: Session }) {
 
     return (<>
         {/* <div>hello</div> */}
-        <button onClick={ _ => handleOpenPicker() }>Read Drive</button>
+        <button onClick={ _ => handleOpenPicker() } className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Read Drive</button>
+        <div className="p-5">
+            {fileList.map(file => <>
+                <div key={file.id} className="pb-3">{JSON.stringify(file)}</div>
+            </>)}
+        </div>
     </>);
 
 
