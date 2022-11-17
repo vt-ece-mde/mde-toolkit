@@ -6,9 +6,9 @@ Collection of tools useful for Virginia Tech ECE MDE course administration.
 
 The following is required to fully run this toolkit.
 
-- Docker
-- Google API keys
-- Canvas API keys
+- [Docker](#docker-setup)
+- [Google API keys](#google-setup)
+- [Canvas API keys](#canvas-setup)
 
 ### Docker Setup
 
@@ -34,9 +34,47 @@ The following is a description of what each Docker container does. Refer to [doc
 | `backend` | Legacy REST API endpoints written in Python `FastAPI` and served using `gunicorn`. This is carryover from previous toolkit development that implemented a standalone CLI. We keep it around to support those legacy calls, and adds flexibility for Python-specific implementations in the future. |
 | `db` | The toolkit database. Note that future deployments could opt for a cloud-hosted database solution if desired. |
 
-## Canvas Development Guide
+### Google Setup
 
-### Basics
+The toolkit uses Google APIs to access services such as Google Drive, user email, and other things. **Before using this tool, you MUST create a Google developer account, create a project for this toolkit, and copy the associated API keys**.
+
+A really good guide on how to do this can be found here: <https://refine.dev/blog/nextauth-google-github-authentication-nextjs/>
+
+> Note that you can skip the NextJS project creation part and jump straight to the ["For GoogleProvider"](https://refine.dev/blog/nextauth-google-github-authentication-nextjs/#for-googleprovider-make-sure-you-have-a-google-account) section
+
+To summarize, you need to do the following:
+
+1. Setup a Google API developer account
+2. Create a Google cloud project for this MDE toolkit
+    - **Make sure to add the app's URL (<http://localhost:3000> or deployment URL) to the _Authorized Origins_ list**
+4. Create an environment file for the front-end application `./frontend/env.local`
+    - **Note that this file does not exist, you will need to create it**
+5. Copy the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` variables into `./frontend/env.local`:
+
+```env
+GOOGLE_CLIENT_ID=xxxxxxxxxx
+GOOGLE_CLIENT_SECRET=yyyyyyyyyy
+```
+
+
+5. Generate a NextJS authentication secret key using the command
+
+```bash
+$ openssl rand -base64 32
+```
+
+6. Copy the secret key into `./frontend/env.local` along with your front-end deployed URL
+
+```env
+# ...
+NEXTAUTH_URL=http://localhost:3000 # for development
+# NEXTAUTH_URL=https://{YOURDOMAIN} # for deployment
+NEXTAUTH_SECRET=zzzzzzzzzz
+```
+
+### Canvas Setup
+
+#### Basics
 
 - Need access token from Canvas directly. See guide on how to manually request a token: <https://kb.iu.edu/d/aaja>
 - Save access token to environment variable `CANVAS_API_TOKEN`
@@ -44,7 +82,7 @@ The following is a description of what each Docker container does. Refer to [doc
 - Use `jq` to filter JSON responses
 - Canvas API uses pagination (limit is 10 results per query). This can be extended using the `?per_page=100` query modifier.
 
-### Query Examples
+#### Query Examples
 
 Basic query to get list of courses:
 
