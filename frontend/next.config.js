@@ -16,6 +16,11 @@ const nextConfig = {
     CANVAS_API_TOKEN: process.env.CANVAS_API_TOKEN,
     CANVAS_BASE_URL: "/api/canvas", // Intended to be empty.
   },
+  images: {
+    domains: [
+      'lh3.googleusercontent.com',
+    ],
+  },
   async rewrites() {
     return [
       {
