@@ -46,6 +46,7 @@ To summarize, you need to do the following:
 
 1. Setup a Google API developer account
 2. Create a Google cloud project for this MDE toolkit
+3. Create a new **OAuth client ID** credential for a **Web application**
     - **Make sure to add the app's URL (<http://localhost:3000> or deployment URL) to the _Authorized Origins_ list**
 4. Create an environment file for the front-end application `./frontend/env.local`
     - **Note that this file does not exist, you will need to create it**
@@ -56,14 +57,13 @@ GOOGLE_CLIENT_ID=xxxxxxxxxx
 GOOGLE_CLIENT_SECRET=yyyyyyyyyy
 ```
 
-
-5. Generate a NextJS authentication secret key using the command
+6. Generate a NextJS authentication secret key using the command
 
 ```bash
 $ openssl rand -base64 32
 ```
 
-6. Copy the secret key into `./frontend/env.local` along with your front-end deployed URL
+7. Copy the secret key into `./frontend/env.local` along with your front-end deployed URL
 
 ```env
 # ...
