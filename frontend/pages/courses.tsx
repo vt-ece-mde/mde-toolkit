@@ -1,5 +1,8 @@
 import { FormEvent, useState } from "react";
 
+import { getSession } from 'next-auth/react';
+import type { GetServerSidePropsContext } from 'next';
+
 import getConfig from 'next/config';
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 const API_URI = serverRuntimeConfig.API_URI || publicRuntimeConfig.API_URI;
@@ -154,5 +157,28 @@ export default function Courses() {
             </div>
             </div>
         );
+    }
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+
+    const { req, resolvedUrl } = context;
+    const session = await getSession({ req });
+
+    // Redirect to signin page.
+    if (!session || session?.error === "RefreshAccessTokenError") {
+        return {
+            redirect: { 
+                destination: '/auth/signin?' + new URLSearchParams({
+                    redirect: resolvedUrl,
+                }),
+                permanent: false,
+            },
+        }
+    }
+
+    // Render desired page with session.
+    return {
+        props: {},
     }
 }

@@ -4,6 +4,7 @@
 import { useSession, getSession, getProviders } from 'next-auth/react'
 import type { Session } from 'next-auth';
 import { GetServerSidePropsContext } from 'next';
+import { useRouter } from 'next/router';
 
 
 export default function Home ({ session }: { session: Session }) {
@@ -20,13 +21,18 @@ export default function Home ({ session }: { session: Session }) {
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
 
-    const { req } = context;
+    const { req, resolvedUrl } = context;
     const session = await getSession({ req });
 
     // Redirect to signin page.
-    if (!session) {
+    if (!session || session?.error === "RefreshAccessTokenError") {
         return {
-            redirect: { destination: '/auth/signin', permanent: false },
+            redirect: { 
+                destination: '/auth/signin?' + new URLSearchParams({
+                    redirect: resolvedUrl,
+                }),
+                permanent: false,
+            },
         }
     }
 
