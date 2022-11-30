@@ -76,6 +76,26 @@ interface ImageLocation
     location: string
 }
 
+interface TeamVideo
+{
+    videoURL: string
+}
+
+interface TeamPowerPoint
+{
+    powerPointURL: string
+}
+
+interface TeamPoster
+{
+    posterURL: string
+}
+
+interface TeamProjectTitle
+{
+    teamProjectTitle: string
+}
+
 interface Team
 {
     teamNames: TeamNames
@@ -83,16 +103,28 @@ interface Team
     smeNames: SMENames
     projectSummary: ProjectSummary
     imageLocation: ImageLocation
+    teamVideo : TeamVideo
+    teamPowerPoint: TeamPowerPoint
+    teamPoster: TeamPoster
+    teamProjectTitle: TeamProjectTitle
 }
 
-export function buildTeamsFromCSVStrings(teamNamesArr: string[][], sponsorNamesArr: string[][],
-    smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string) : Team
+export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
+    smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
+    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
 {
     var teamNames = {} as TeamNames;
     var sponsorNames = {} as SponsorNames;
     var smeNames = {} as SMENames;
     var projectSummary = {} as ProjectSummary;
     var imageLocation = {} as ImageLocation
+    var teamVideo = {} as TeamVideo;
+    var teamPowerPoint = {}  as TeamPowerPoint;
+    var teamPoster = {} as TeamPoster;
+    var projectTitle = {} as TeamProjectTitle;
+
+    // parse the team project title
+    projectTitle.teamProjectTitle = teamProjectTitle;
 
     // parse the teams names
     for(let i = 1; i < teamNamesArr.length; i++)
@@ -132,8 +164,17 @@ export function buildTeamsFromCSVStrings(teamNamesArr: string[][], sponsorNamesA
     // parse the project summary
     projectSummary.summary = projectSummaryStr;
 
-    // parse the image location
+    // parse the image url
     imageLocation.location = imageLocationStr;
+
+    // parse the video URL
+    teamVideo.videoURL = teamVideoURL;
+
+    // prase the power point URL
+    teamPowerPoint.powerPointURL = teamPowerPointURL;
+
+    // parse the team poster url
+    teamPoster.posterURL = teamPosterURL;
 
     // Build the team interface
     var team = {} as Team
@@ -142,6 +183,10 @@ export function buildTeamsFromCSVStrings(teamNamesArr: string[][], sponsorNamesA
     team.smeNames = smeNames;
     team.projectSummary = projectSummary;
     team.imageLocation = imageLocation;
+    team.teamVideo = teamVideo;
+    team.teamPowerPoint = teamPowerPoint;
+    team.teamPoster = teamPoster;
+    team.teamProjectTitle = projectTitle;
 
     return team;
 }
