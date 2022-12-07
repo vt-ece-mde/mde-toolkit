@@ -22,11 +22,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
     const { req, query } = context;
     const { redirect = '/' } = query; // Defaults to homepage.
-    console.log(`redirect? ${JSON.stringify(redirect)}`)
     const session = await getSession({ req });
 
-    // Redirect to homepage if already logged in.
-    if (session) {
+    // Redirect to homepage if already logged in and no error exists in session.
+    if (session && session.error === undefined) {
         return {
             redirect: {
                 destination: redirect,
@@ -34,6 +33,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
             },
         }
     }
+    
+    if (session && session.error !== undefined) {
+        console.log(`[SignIn] there was an error with the current session`)
+    }
+
+    console.log(`[SignIn] rendering fresh sign-in page`)
 
     // Render signin page with provider list.
     const providers = await getProviders()
