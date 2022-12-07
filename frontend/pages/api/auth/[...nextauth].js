@@ -25,13 +25,12 @@ async function refreshAccessToken(token) {
 
         const res = await fetch(url, {
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-url-encoded",
             },
             method: "POST",
         })
 
         const refreshed_tokens = await res.json()
-        console.log(`refreshed_tokens? ${JSON.stringify(refreshed_tokens)}`)
 
         if (!res.ok) {
             throw refreshed_tokens
@@ -48,8 +47,7 @@ async function refreshAccessToken(token) {
         console.log(`t? ${JSON.stringify(t)}`)
         return t
     } catch (error) {
-        console.log(`ERROR`)
-        console.log(error)
+        console.log(`ERROR: ${JSON.stringify(error)}`)
 
         return {
             ...token,
