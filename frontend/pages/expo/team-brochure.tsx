@@ -13,6 +13,7 @@ import { listFoldersInFolder } from '../../lib/googledrive';
 export default function TeamBrochure({ session }: { session: Session }) {
 
     const [fileList, setFileList] = useState<drive_v3.Schema$File[]>([]);
+    const [parentId, setParentId] = useState<string>(''); // Allows resume at previous folder on subsequent drive calls.
 
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
@@ -20,7 +21,37 @@ export default function TeamBrochure({ session }: { session: Session }) {
     const [openPicker, authResponse] = useDrivePicker();  
 
 
+    const setFolderChildren = async (id: string) => {
+
+        // Get all children in selected folder.
+        console.log('fetching')
+        const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
+            type: 'all', // 'all'|'files'|'folders'
+        }))
+        const j = await res.json()
+        console.log(`GOT RES: ${JSON.stringify(j)}`)
+
+        // Set list of children.
+        setFileList(j)
+    }
+
+    const setFolderParent = async (id: string) => {
+        // Get parent folder for easy access next time.
+        const res = await fetch(`/api/google/drive/get?`+ new URLSearchParams({
+            fileId: id,
+            fields: "parents",
+            supportsAllDrives: 'true',
+        }))
+        const j = await res.json()
+        console.log(`GOT res: ${JSON.stringify(j)}`)
+        if (j.error === undefined ) {
+            setParentId(j.parents[0])
+        }
+    }
+
+
     const handlePickerSelection = async (data: PickerCallback) => {
+
         if (data.action === 'cancel') {
             console.log('User clicked cancel/close button')
         } 
@@ -28,13 +59,11 @@ export default function TeamBrochure({ session }: { session: Session }) {
             console.log(`data? ${JSON.stringify(data)}`)
 
             if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
-                console.log('fetching')
-                const res = await fetch(`/api/google/drive/list/${data.docs[0].id}?` + new URLSearchParams({
-                    type: 'all', // 'all'|'files'|'folders'
-                }))
-                const j = await res.json()
-                console.log(`GOT RES: ${JSON.stringify(j)}`)
-                setFileList(j)
+                // Get all children in selected folder.
+                setFolderChildren(data.docs[0].id)
+
+                // Get parent folder for easy access next time.
+                setFolderParent(data.docs[0].id)
             }
         }
         else if (data.action === 'loaded') {
@@ -55,6 +84,7 @@ export default function TeamBrochure({ session }: { session: Session }) {
             supportDrives: true,
             multiselect: false,
             callbackFunction: handlePickerSelection,
+            setParentFolder: parentId,
         })
     }
 
