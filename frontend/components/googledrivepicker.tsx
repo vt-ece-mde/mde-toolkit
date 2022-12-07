@@ -184,6 +184,7 @@ export default function useDrivePicker(): [
         .setIncludeFolders(true)
         .setEnableDrives(true)
         .setSelectFolderEnabled(true);
+    if (setParentFolder) folderView.setParent(setParentFolder);
     picker.addView(folderView);
 
     if (supportDrives) {
