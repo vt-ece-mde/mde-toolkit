@@ -154,7 +154,7 @@ function parseTeamNames(teamNamesArr: string[][]): TeamMember[] {
         var aspiration = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'aspiration');
         var courseComment = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'course_comment');
 
-        teamMembers.push({
+        const tm: TeamMember = {
             title,
             lastName,
             firstName,
@@ -165,7 +165,14 @@ function parseTeamNames(teamNamesArr: string[][]): TeamMember[] {
             StateOrCountry,
             aspiration,
             courseComment,
-        });
+        }
+
+        // Do not push sponsors that have all empty elements.
+        const isEmpty = Object.values(tm).every(value => value.length === 0)
+        if (!isEmpty) {
+            teamMembers.push(tm);
+        }
+
     }
 
     return teamMembers;
@@ -209,13 +216,19 @@ function parseSponsorNames(sponsorNamesArr: string[][]): Sponsor[] {
         var email = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'email');
         var company = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'company');
 
-        sponsors.push({
+        const sponsor: Sponsor = {
             title,
             lastName,
             firstName,
             email,
             company,
-        });
+        }
+
+        // Do not push sponsors that have all empty elements.
+        const isEmpty = Object.values(sponsor).every(value => value.length === 0)
+        if (!isEmpty) {
+            sponsors.push(sponsor);
+        }
     }
 
     return sponsors;
@@ -258,13 +271,19 @@ function parseSMENames(smeNamesArr: string[][]): SME[] {
         var email = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'email');
         var company = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'company');
 
-        smes.push({
+        const sme: SME = {
             title,
             lastName,
             firstName,
             email,
             company,
-        });
+        }
+
+        // Do not push sponsors that have all empty elements.
+        const isEmpty = Object.values(sme).every(value => value.length === 0)
+        if (!isEmpty) {
+            smes.push(sme);
+        }
     }
 
     return smes;
