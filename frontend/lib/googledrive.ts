@@ -1,7 +1,11 @@
 import { drive_v3 } from "googleapis";
 import { csv2arr } from "./parsing";
 
-export const MimeTypesCSV = ['text/csv', 'application/vnd.google-apps.spreadsheet'] as const;
+export const MimeTypesCSV = [
+    'text/csv',
+    'application/vnd.google-apps.spreadsheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+] as const;
 export type MimeTypesCSV = (typeof MimeTypesCSV)[number]; // This is both a constant list and a type.
 export const MimeTypesSupported = MimeTypesCSV;
 export type MimeTypesSupported = (typeof MimeTypesSupported)[number]; // Extends all possible mime types.
@@ -22,7 +26,7 @@ export async function parseDriveCSV(args: {client: drive_v3.Drive, fileId: strin
     }
 
     // Download spreadsheet as CSV.
-    else if (args.mimeType === 'application/vnd.google-apps.spreadsheet') {
+    else if (args.mimeType === 'application/vnd.google-apps.spreadsheet' || args.mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
         const res = await args.client.files.export({
             fileId: args.fileId,
             mimeType: 'text/csv', // Force download as CSV.
