@@ -63,7 +63,6 @@ interface SMENames
     firstNames: string[]
     emails: string[]
     companies: string[]
-
 }
 
 interface ProjectSummary
@@ -96,7 +95,7 @@ interface TeamProjectTitle
     teamProjectTitle: string
 }
 
-interface Team
+export interface Team
 {
     teamNames: TeamNames
     sponsorNames: SponsorNames
@@ -113,9 +112,32 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
     smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
     teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
 {
-    var teamNames = {} as TeamNames;
-    var sponsorNames = {} as SponsorNames;
-    var smeNames = {} as SMENames;
+    var teamNames: TeamNames = {
+        titles: [],
+        lastNames: [],
+        firstNames: [],
+        emails: [],
+        degrees: [],
+        major: [],
+        hometown: [],
+        StateOrCountry: [],
+        aspirations: [],
+        courseComments: [],
+    };
+    var sponsorNames: SponsorNames = {
+        titles: [],
+        lastNames: [],
+        firstNames: [],
+        emails: [],
+        companies: [],
+    };
+    var smeNames: SMENames = {
+        titles: [],
+        lastNames: [],
+        firstNames: [],
+        emails: [],
+        companies: [],
+    };
     var projectSummary = {} as ProjectSummary;
     var imageLocation = {} as ImageLocation
     var teamVideo = {} as TeamVideo;
