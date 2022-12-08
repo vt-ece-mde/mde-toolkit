@@ -32,80 +32,48 @@ export function csv2arr(str: string, delimiter: string = ',', quotechar: string 
     );
 }
 
-interface TeamNames
+
+interface TeamMember
 {
-    titles: string[]    // Mr. Mrs. Dr. etc.
-    lastNames: string[]
-    firstNames: string[]
-    emails: string[]
-    degrees: string[]
-    major: string[]
-    hometown: string[]
-    StateOrCountry: string[]
-    aspirations: string[]
-    courseComments: string[]
+    title: string    // Mr. Mrs. Dr. etc.
+    lastName: string
+    firstName: string
+    email: string
+    degree: string
+    major: string
+    hometown: string
+    StateOrCountry: string
+    aspiration: string
+    courseComment: string
 }
 
-interface SponsorNames
-{
-    titles: string[]    // Mr. Mrs. Dr. etc.
-    lastNames: string[]
-    firstNames: string[]
-    emails: string[]
-    companies: string[]
+interface Sponsor {
+    title: string; // Mr. Mrs. Dr. etc.
+    lastName: string;
+    firstName: string;
+    email: string;
+    company: string;
 }
 
-
-interface SMENames
-{
-    titles: string[]    // Mr. Mrs. Dr. etc.
-    lastNames: string[]
-    firstNames: string[]
-    emails: string[]
-    companies: string[]
-}
-
-interface ProjectSummary
-{
-    summary: string
-}
-
-interface ImageLocation
-{
-    location: string
-}
-
-interface TeamVideo
-{
-    videoURL: string
-}
-
-interface TeamPowerPoint
-{
-    powerPointURL: string
-}
-
-interface TeamPoster
-{
-    posterURL: string
-}
-
-interface TeamProjectTitle
-{
-    teamProjectTitle: string
+interface SME {
+    title: string; // Mr. Mrs. Dr. etc.
+    lastName: string;
+    firstName: string;
+    email: string;
+    company: string;
 }
 
 export interface Team
 {
-    teamNames: TeamNames
-    sponsorNames: SponsorNames
-    smeNames: SMENames
-    projectSummary: ProjectSummary
-    imageLocation: ImageLocation
-    teamVideo : TeamVideo
-    teamPowerPoint: TeamPowerPoint
-    teamPoster: TeamPoster
-    teamProjectTitle: TeamProjectTitle
+    teamMembers: TeamMember[];
+    sponsors: Sponsor[];
+    smes: SME[];
+    projectSummary: string;
+    imageUrl: string;
+    videoUrl: string;
+    presentationUrl: string;
+    posterUrl: string;
+    projectTitle: string;
 }
 
 /**
@@ -126,19 +94,9 @@ function getValueFromHeaderKey (arr: string[][], hindex: Map<string, number>, i:
 }
 
 
-function parseTeamNames(teamNamesArr: string[][]): TeamNames {
-    var teamNames: TeamNames = {
-        titles: [],
-        lastNames: [],
-        firstNames: [],
-        emails: [],
-        degrees: [],
-        major: [],
-        hometown: [],
-        StateOrCountry: [],
-        aspirations: [],
-        courseComments: [],
-    };
+function parseTeamNames(teamNamesArr: string[][]): TeamMember[] {
+
+    var teamMembers: TeamMember[] = [];
 
     ////// Parse team names
     //
@@ -185,31 +143,38 @@ function parseTeamNames(teamNamesArr: string[][]): TeamNames {
     // Now parse the team names.
     for(let i = 1; i < teamNamesArr.length; i++)
     {
-        teamNames.titles.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'title'));
-        teamNames.lastNames.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'last_name'));
-        teamNames.firstNames.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'first_name'));
-        teamNames.emails.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'email'));
-        teamNames.degrees.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'degree'));
-        teamNames.major.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'major'));
-        teamNames.hometown.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'hometown'));
-        teamNames.StateOrCountry.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'state_or_country'));
-        teamNames.aspirations.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'aspiration'));
-        teamNames.courseComments.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'course_comment'));
+        var title = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'title');
+        var lastName = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'last_name');
+        var firstName = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'first_name');
+        var email = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'email');
+        var degree = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'degree');
+        var major = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'major');
+        var hometown = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'hometown');
+        var StateOrCountry = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'state_or_country');
+        var aspiration = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'aspiration');
+        var courseComment = getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'course_comment');
+
+        teamMembers.push({
+            title,
+            lastName,
+            firstName,
+            email,
+            degree,
+            major,
+            hometown,
+            StateOrCountry,
+            aspiration,
+            courseComment,
+        });
     }
 
-    return teamNames;
+    return teamMembers;
 }
 
 
-function parseSponsorNames(sponsorNamesArr: string[][]): SponsorNames {
+function parseSponsorNames(sponsorNamesArr: string[][]): Sponsor[] {
 
-    var sponsorNames: SponsorNames = {
-        titles: [],
-        lastNames: [],
-        firstNames: [],
-        emails: [],
-        companies: [],
-    };
+    var sponsors: Sponsor[] = [];
 
     var header = [];
     header = sponsorNamesArr[0].map(item => item.toLowerCase().trim());
@@ -238,30 +203,27 @@ function parseSponsorNames(sponsorNamesArr: string[][]): SponsorNames {
     // parse the sponsor names
     for(let i = 1; i < sponsorNamesArr.length; i++)
     {
-        sponsorNames.titles.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'title'));
-        sponsorNames.lastNames.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'last_name'));
-        sponsorNames.firstNames.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'first_name'));
-        sponsorNames.emails.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'email'));
-        sponsorNames.companies.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'company'));
-        // sponsorNames.titles.push(sponsorNamesArr[i][0]);
-        // sponsorNames.lastNames.push(sponsorNamesArr[i][1]);
-        // sponsorNames.firstNames.push(sponsorNamesArr[i][2]);
-        // sponsorNames.emails.push(sponsorNamesArr[i][3]);
-        // sponsorNames.companies.push(sponsorNamesArr[i][4]);
+        var title = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'title');
+        var lastName = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'last_name');
+        var firstName = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'first_name');
+        var email = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'email');
+        var company = getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'company');
+
+        sponsors.push({
+            title,
+            lastName,
+            firstName,
+            email,
+            company,
+        });
     }
 
-    return sponsorNames;
+    return sponsors;
 }
 
-function parseSMENames(smeNamesArr: string[][]): SMENames {
+function parseSMENames(smeNamesArr: string[][]): SME[] {
 
-    var smeNames: SMENames = {
-        titles: [],
-        lastNames: [],
-        firstNames: [],
-        emails: [],
-        companies: [],
-    };
+    var smes: SME[] = [];
 
     var header = [];
     header = smeNamesArr[0].map(item => item.toLowerCase().trim());
@@ -290,19 +252,22 @@ function parseSMENames(smeNamesArr: string[][]): SMENames {
     // parse the sponsor names
     for(let i = 1; i < smeNamesArr.length; i++)
     {
-        smeNames.titles.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'title'));
-        smeNames.lastNames.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'last_name'));
-        smeNames.firstNames.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'first_name'));
-        smeNames.emails.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'email'));
-        smeNames.companies.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'company'));
-        // smeNames.titles.push(smeNamesArr[i][0]);
-        // smeNames.lastNames.push(smeNamesArr[i][1]);
-        // smeNames.firstNames.push(smeNamesArr[i][2]);
-        // smeNames.emails.push(smeNamesArr[i][3]);
-        // smeNames.companies.push(smeNamesArr[i][4]);
+        var title = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'title');
+        var lastName = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'last_name');
+        var firstName = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'first_name');
+        var email = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'email');
+        var company = getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'company');
+
+        smes.push({
+            title,
+            lastName,
+            firstName,
+            email,
+            company,
+        });
     }
 
-    return smeNames;
+    return smes;
 }
 
 
@@ -311,55 +276,25 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
     teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
 {
     // Parse team names
-    const teamNames: TeamNames = parseTeamNames(teamNamesArr);
+    const teamMembers: TeamMember[] = parseTeamNames(teamNamesArr);
 
     // parse the sponsor names
-    const sponsorNames: SponsorNames = parseSponsorNames(sponsorNamesArr);
+    const sponsors: Sponsor[] = parseSponsorNames(sponsorNamesArr);
 
     // parse the sme names
-    const smeNames: SMENames = parseSMENames(smeNamesArr);
-
-    // parse the team project title
-    const projectTitle: TeamProjectTitle = {
-        teamProjectTitle: teamProjectTitle.trim(),
-    };
-
-    // parse the project summary
-    const projectSummary: ProjectSummary = {
-        summary: projectSummaryStr.trim(),
-    }
-
-    // parse the image url
-    const imageLocation: ImageLocation = {
-        location: imageLocationStr,
-    }
-
-    // parse the video URL
-    const teamVideo: TeamVideo = {
-        videoURL: teamVideoURL,
-    }
-
-    // prase the power point URL
-    const teamPowerPoint: TeamPowerPoint = {
-        powerPointURL: teamPowerPointURL,
-    }
-
-    // parse the team poster url
-    const teamPoster: TeamPoster = {
-        posterURL: teamPosterURL,
-    }
+    const smes: SME[] = parseSMENames(smeNamesArr);
 
     // Build the team interface
     var team = {} as Team
-    team.teamNames = teamNames;
-    team.sponsorNames = sponsorNames;
-    team.smeNames = smeNames;
-    team.projectSummary = projectSummary;
-    team.imageLocation = imageLocation;
-    team.teamVideo = teamVideo;
-    team.teamPowerPoint = teamPowerPoint;
-    team.teamPoster = teamPoster;
-    team.teamProjectTitle = projectTitle;
+    team.teamMembers = teamMembers;
+    team.sponsors = sponsors;
+    team.smes = smes;
+    team.projectSummary = projectSummaryStr.trim();
+    team.imageUrl = imageLocationStr;
+    team.videoUrl = teamVideoURL;
+    team.presentationUrl = teamPowerPointURL;
+    team.posterUrl = teamPosterURL;
+    team.projectTitle = teamProjectTitle.trim();
 
     return team;
 }
