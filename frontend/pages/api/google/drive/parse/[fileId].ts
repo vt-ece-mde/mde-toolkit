@@ -4,10 +4,16 @@ import { unstable_getServerSession } from "next-auth/next"
 import { NextAuthOptions, Session } from "next-auth"
 import { authOptions } from "../../../auth/[...nextauth]"
 
-import { drive_v3, google } from "googleapis";
+import { google } from "googleapis";
 // import drive from "@googleapis/drive";
 
-import { parseDriveCSV, MimeTypesSupported, MimeTypesCSV } from '../../../../../lib/googledrive';
+import { 
+    MimeTypesSupported,
+    MimeTypesCSV,
+    MimeTypesText,
+    parseDriveFileCSV,
+    parseDriveFileText,
+} from '../../../../../lib/googledrive';
 
 
 
@@ -38,12 +44,14 @@ export default async function handler(
         refresh_token: refresh_token,
     });
 
-    const client = google.drive({ auth, version: "v3" });
 
-    var blob;
+    var blob;   
     var statcode = 200;
-    if (MimeTypesCSV.includes(mimeType)) {
-        blob = await parseDriveCSV({ client, fileId, mimeType: mimeType as any })
+    if (MimeTypesCSV.includes(mimeType as MimeTypesCSV)) {
+        blob = await parseDriveFileCSV({ auth, fileId, mimeType: mimeType as any })
+    }
+    else if (MimeTypesText.includes(mimeType as MimeTypesText)) {
+        blob = await parseDriveFileText({ auth, fileId, mimeType: mimeType as any })
     }
     else {
         statcode = 400;
