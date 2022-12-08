@@ -33,7 +33,7 @@ export function csv2arr(str: string, delimiter: string = ',', quotechar: string 
 }
 
 
-interface TeamMember
+export interface TeamMember
 {
     title: string    // Mr. Mrs. Dr. etc.
     lastName: string
@@ -47,7 +47,7 @@ interface TeamMember
     courseComment: string
 }
 
-interface Sponsor {
+export interface Sponsor {
     title: string; // Mr. Mrs. Dr. etc.
     lastName: string;
     firstName: string;
@@ -55,7 +55,7 @@ interface Sponsor {
     company: string;
 }
 
-interface SME {
+export interface SME {
     title: string; // Mr. Mrs. Dr. etc.
     lastName: string;
     firstName: string;
