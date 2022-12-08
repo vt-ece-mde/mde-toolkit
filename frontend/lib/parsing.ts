@@ -108,10 +108,25 @@ export interface Team
     teamProjectTitle: TeamProjectTitle
 }
 
-export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
-    smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
-    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
-{
+/**
+ * Helper function to get element from 2D array given its row (i) and key lookup for column. If no column is found it defaults to returning an empty string.
+ */
+function getValueFromHeaderKey (arr: string[][], hindex: Map<string, number>, i: number, hkey: string): string {
+    const hdx = hindex.get(hkey);
+    if (hdx !== undefined) {
+        const val = arr[i][hdx];
+        if (val !== undefined) {
+            return val.trim();
+        } else {
+            return '';
+        }
+    } else {
+        return ''; // Default to empty string.
+    }
+}
+
+
+function parseTeamNames(teamNamesArr: string[][]): TeamNames {
     var teamNames: TeamNames = {
         titles: [],
         lastNames: [],
@@ -124,6 +139,70 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
         aspirations: [],
         courseComments: [],
     };
+
+    ////// Parse team names
+    //
+    // First we need to build a lookup table for the header, because the precise order is not guaranteed.
+    var header = [];
+    header = teamNamesArr[0].map(item => item.toLowerCase().trim());
+    var headerIndex = new Map<string, number>();
+    for(let i = 0; i < header.length; i++) {
+        if (header[i].includes('title')) {
+            headerIndex.set('title', i);
+        }
+        else if (header[i].includes('first') && header[i].includes('name')) {
+            headerIndex.set('first_name', i);
+        }
+        else if (header[i].includes('last') && header[i].includes('name')) {
+            headerIndex.set('last_name', i);
+        }
+        else if (header[i].includes('email')) {
+            headerIndex.set('email', i);
+        }
+        else if (header[i].includes('hometown')) {
+            headerIndex.set('hometown', i);
+        }
+        else if (header[i].includes('state') || header[i].includes('country')) {
+            headerIndex.set('state_or_country', i);
+        }
+        else if (header[i].includes('degree')) {
+            headerIndex.set('degree', i);
+        }
+        else if (header[i].includes('major')) {
+            headerIndex.set('major', i);
+        }
+        else if (header[i].includes('aspiration')) {
+            headerIndex.set('aspiration', i);
+        }
+        else if (header[i].includes('course') || header[i].includes('comment')) {
+            headerIndex.set('course_comment', i);
+        } 
+        else {
+            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+        }
+    }
+    //
+    // Now parse the team names.
+    for(let i = 1; i < teamNamesArr.length; i++)
+    {
+        teamNames.titles.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'title'));
+        teamNames.lastNames.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'last_name'));
+        teamNames.firstNames.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'first_name'));
+        teamNames.emails.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'email'));
+        teamNames.degrees.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'degree'));
+        teamNames.major.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'major'));
+        teamNames.hometown.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'hometown'));
+        teamNames.StateOrCountry.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'state_or_country'));
+        teamNames.aspirations.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'aspiration'));
+        teamNames.courseComments.push(getValueFromHeaderKey(teamNamesArr, headerIndex, i, 'course_comment'));
+    }
+
+    return teamNames;
+}
+
+
+function parseSponsorNames(sponsorNamesArr: string[][]): SponsorNames {
+
     var sponsorNames: SponsorNames = {
         titles: [],
         lastNames: [],
@@ -131,6 +210,51 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
         emails: [],
         companies: [],
     };
+
+    var header = [];
+    header = sponsorNamesArr[0].map(item => item.toLowerCase().trim());
+    var headerIndex = new Map<string, number>();
+    for(let i = 0; i < header.length; i++) {
+        if (header[i].includes('title')) {
+            headerIndex.set('title', i);
+        }
+        else if (header[i].includes('first') && header[i].includes('name')) {
+            headerIndex.set('first_name', i);
+        }
+        else if (header[i].includes('last') && header[i].includes('name')) {
+            headerIndex.set('last_name', i);
+        }
+        else if (header[i].includes('email')) {
+            headerIndex.set('email', i);
+        }
+        else if (header[i].includes('company')) {
+            headerIndex.set('company', i);
+        }
+        else {
+            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+        }
+    }
+
+    // parse the sponsor names
+    for(let i = 1; i < sponsorNamesArr.length; i++)
+    {
+        sponsorNames.titles.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'title'));
+        sponsorNames.lastNames.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'last_name'));
+        sponsorNames.firstNames.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'first_name'));
+        sponsorNames.emails.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'email'));
+        sponsorNames.companies.push(getValueFromHeaderKey(sponsorNamesArr, headerIndex, i, 'company'));
+        // sponsorNames.titles.push(sponsorNamesArr[i][0]);
+        // sponsorNames.lastNames.push(sponsorNamesArr[i][1]);
+        // sponsorNames.firstNames.push(sponsorNamesArr[i][2]);
+        // sponsorNames.emails.push(sponsorNamesArr[i][3]);
+        // sponsorNames.companies.push(sponsorNamesArr[i][4]);
+    }
+
+    return sponsorNames;
+}
+
+function parseSMENames(smeNamesArr: string[][]): SMENames {
+
     var smeNames: SMENames = {
         titles: [],
         lastNames: [],
@@ -138,65 +262,92 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
         emails: [],
         companies: [],
     };
-    var projectSummary = {} as ProjectSummary;
-    var imageLocation = {} as ImageLocation
-    var teamVideo = {} as TeamVideo;
-    var teamPowerPoint = {}  as TeamPowerPoint;
-    var teamPoster = {} as TeamPoster;
-    var projectTitle = {} as TeamProjectTitle;
 
-    // parse the team project title
-    projectTitle.teamProjectTitle = teamProjectTitle;
-
-    // parse the teams names
-    for(let i = 1; i < teamNamesArr.length; i++)
-    {
-        teamNames.titles.push(teamNamesArr[i][0]);
-        teamNames.lastNames.push(teamNamesArr[i][1]);
-        teamNames.firstNames.push(teamNamesArr[i][2]);
-        teamNames.emails.push(teamNamesArr[i][3]);
-        teamNames.degrees.push(teamNamesArr[i][4]);
-        teamNames.major.push(teamNamesArr[i][5]);
-        teamNames.hometown.push(teamNamesArr[i][6]);
-        teamNames.StateOrCountry.push(teamNamesArr[i][7]);
-        teamNames.aspirations.push(teamNamesArr[i][8]);
-        teamNames.courseComments.push(teamNamesArr[i][9]);
+    var header = [];
+    header = smeNamesArr[0].map(item => item.toLowerCase().trim());
+    var headerIndex = new Map<string, number>();
+    for(let i = 0; i < header.length; i++) {
+        if (header[i].includes('title')) {
+            headerIndex.set('title', i);
+        }
+        else if (header[i].includes('first') && header[i].includes('name')) {
+            headerIndex.set('first_name', i);
+        }
+        else if (header[i].includes('last') && header[i].includes('name')) {
+            headerIndex.set('last_name', i);
+        }
+        else if (header[i].includes('email')) {
+            headerIndex.set('email', i);
+        }
+        else if (header[i].includes('company')) {
+            headerIndex.set('company', i);
+        }
+        else {
+            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+        }
     }
 
     // parse the sponsor names
-    for(let i = 1; i < sponsorNamesArr.length; i++)
-    {
-        sponsorNames.titles.push(sponsorNamesArr[i][0]);
-        sponsorNames.lastNames.push(sponsorNamesArr[i][1]);
-        sponsorNames.firstNames.push(sponsorNamesArr[i][2]);
-        sponsorNames.emails.push(sponsorNamesArr[i][3]);
-        sponsorNames.companies.push(sponsorNamesArr[i][4]);
-    }
-
-    // parse the sme names
     for(let i = 1; i < smeNamesArr.length; i++)
     {
-        smeNames.titles.push(smeNamesArr[i][0]);
-        smeNames.lastNames.push(smeNamesArr[i][1]);
-        smeNames.firstNames.push(smeNamesArr[i][2]);
-        smeNames.emails.push(smeNamesArr[i][3]);
-        smeNames.companies.push(smeNamesArr[i][4]);
+        smeNames.titles.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'title'));
+        smeNames.lastNames.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'last_name'));
+        smeNames.firstNames.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'first_name'));
+        smeNames.emails.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'email'));
+        smeNames.companies.push(getValueFromHeaderKey(smeNamesArr, headerIndex, i, 'company'));
+        // smeNames.titles.push(smeNamesArr[i][0]);
+        // smeNames.lastNames.push(smeNamesArr[i][1]);
+        // smeNames.firstNames.push(smeNamesArr[i][2]);
+        // smeNames.emails.push(smeNamesArr[i][3]);
+        // smeNames.companies.push(smeNamesArr[i][4]);
     }
 
+    return smeNames;
+}
+
+
+export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
+    smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
+    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
+{
+    // Parse team names
+    const teamNames: TeamNames = parseTeamNames(teamNamesArr);
+
+    // parse the sponsor names
+    const sponsorNames: SponsorNames = parseSponsorNames(sponsorNamesArr);
+
+    // parse the sme names
+    const smeNames: SMENames = parseSMENames(smeNamesArr);
+
+    // parse the team project title
+    const projectTitle: TeamProjectTitle = {
+        teamProjectTitle: teamProjectTitle.trim(),
+    };
+
     // parse the project summary
-    projectSummary.summary = projectSummaryStr;
+    const projectSummary: ProjectSummary = {
+        summary: projectSummaryStr.trim(),
+    }
 
     // parse the image url
-    imageLocation.location = imageLocationStr;
+    const imageLocation: ImageLocation = {
+        location: imageLocationStr,
+    }
 
     // parse the video URL
-    teamVideo.videoURL = teamVideoURL;
+    const teamVideo: TeamVideo = {
+        videoURL: teamVideoURL,
+    }
 
     // prase the power point URL
-    teamPowerPoint.powerPointURL = teamPowerPointURL;
+    const teamPowerPoint: TeamPowerPoint = {
+        powerPointURL: teamPowerPointURL,
+    }
 
     // parse the team poster url
-    teamPoster.posterURL = teamPosterURL;
+    const teamPoster: TeamPoster = {
+        posterURL: teamPosterURL,
+    }
 
     // Build the team interface
     var team = {} as Team
