@@ -8,22 +8,26 @@ import useDrivePicker from '../../components/googledrivepicker'
 import { Session } from 'next-auth';
 
 import { listFoldersInFolder } from '../../lib/googledrive';
+import { buildTeamsFromCSVStrings, Team } from '../../lib/parsing';
 
 
 
 type State = {
     fetching: boolean;
-    fileList: drive_v3.Schema$File[];
+    // fileList: drive_v3.Schema$File[];
     parentId: string;
-    pickedFile: drive_v3.Schema$File;
+    // pickedFile: drive_v3.Schema$File;
+
+    pickedFolders: drive_v3.Schema$File[];
 }
 
 type Action =
+    | { type: 'set-pickedFolders', pickedFolders: drive_v3.Schema$File[] }
     | { type: 'set-fetching', fetching: boolean }
-    | { type: 'set-fileList', fileList: drive_v3.Schema$File[] }
-    | { type: 'set-pickedFile', pickedFile: drive_v3.Schema$File }
+
+    // | { type: 'set-fileList', fileList: drive_v3.Schema$File[] }
     | { type: 'set-parentId', parentId: string }
-    | { type: 'picker-complete', fetching: boolean, fileList: drive_v3.Schema$File[], parentId: string }
+    // | { type: 'picker-complete', fetching: boolean, fileList: drive_v3.Schema$File[], parentId: string }
 
 export default function TeamBrochure({ session }: { session: Session }) {
 
@@ -40,48 +44,56 @@ export default function TeamBrochure({ session }: { session: Session }) {
                     ...state,
                     fetching: action.fetching,
                 };
-            case 'set-fileList':
-                return {
-                    ...state,
-                    fileList: action.fileList,
-                };
+            // case 'set-fileList':
+            //     return {
+            //         ...state,
+            //         fileList: action.fileList,
+            //     };
             case 'set-parentId':
                 return {
                     ...state,
                     parentId: action.parentId,
                 };
-            case 'set-pickedFile':
+            // case 'set-pickedFile':
+            //     return {
+            //         ...state,
+            //         pickedFile: action.pickedFile,
+            //     };
+            // case 'picker-complete':
+            //     return {
+            //         ...state,
+            //         fetching: action.fetching,
+            //         fileList: action.fileList,
+            //         parentId: action.parentId,
+            //     };
+            case 'set-pickedFolders':
                 return {
                     ...state,
-                    pickedFile: action.pickedFile,
-                };
-            case 'picker-complete':
-                return {
-                    ...state,
-                    fetching: action.fetching,
-                    fileList: action.fileList,
-                    parentId: action.parentId,
+                    pickedFolders: action.pickedFolders,
                 };
             default:
                 return { 
                     fetching: false,
-                    fileList: [],
+                    // fileList: [],
                     parentId: '',
-                    pickedFile: {},
+                    // pickedFile: {},
+                    pickedFolders: [],
                 };
         }
     }
 
     const [{
         fetching,
-        fileList,
+        // fileList,
         parentId,
-        pickedFile,
+        // pickedFile,
+        pickedFolders,
     }, dispatch] = useReducer(reducer, { 
         fetching: false,
-        fileList: [],
+        // fileList: [],
         parentId: '',
-        pickedFile: {},
+        // pickedFile: {},
+        pickedFolders: [],
     })
 
     const access_token = session?.access_token;
@@ -99,7 +111,8 @@ export default function TeamBrochure({ session }: { session: Session }) {
 
             // Get all children in selected folder.
             const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
-                type: 'all', // 'all'|'files'|'folders'
+                // type: 'all', // 'all'|'files'|'folders'
+                type: 'files', // 'all'|'files'|'folders'
             }))
             const j = await res.json()
             console.log(`GOT RES: ${JSON.stringify(j)}`)
@@ -124,28 +137,175 @@ export default function TeamBrochure({ session }: { session: Session }) {
             }
         }
 
-        const run = async (id: string) => {
+        const parseDriveFile = async (id: string, mimeType: string): Promise<string|string[][]> => {
+            const res = await fetch(`/api/google/drive/parse/${id}?`+ new URLSearchParams({
+                mimeType: mimeType,
+            }))
+            const j = await res.json()
+            return j;
+        }
 
-            // Set the fetching state.
-            dispatch({ type: 'set-fetching', fetching: true });
 
-            // Get folder and parent content.
-            const l = await getFolderChildren(id);
-            const p = await getFolderParent(id);
+        const run = async (folders: drive_v3.Schema$File[]) => {
 
-            // Set folder and parent content and reset the fetching state.
-            dispatch({ type: 'picker-complete', 
-                fetching: false,
-                fileList: l,
-                parentId: p,
-            });
+            // Get ID of parent folder to make subsequent Drive picker calls easier.
+            if (folders[0].id) {
+                const p = await getFolderParent(folders[0].id);
+                dispatch({ type: 'set-parentId', parentId: p });
+            }
+
+            const teams: (Team | undefined)[] = await Promise.all(folders.map(async (folder, index) => {
+                if (folder.id) {
+                    const files = await getFolderChildren(folder.id);
+
+                    interface TeamFiles {
+                        teamTitle?: drive_v3.Schema$File;
+                        teamPhoto?: drive_v3.Schema$File;
+                        teamPhotoNames?: drive_v3.Schema$File;
+                        teamNames?: drive_v3.Schema$File;
+                        teamSponsorNames?: drive_v3.Schema$File;
+                        teamSMENames?: drive_v3.Schema$File;
+                        teamPresentation?: drive_v3.Schema$File;
+                        teamPoster?: drive_v3.Schema$File;
+                        teamProjectSummary?: drive_v3.Schema$File;
+                    }
+                    var teamFiles: TeamFiles = {}
+
+                    for (let index = 0; index < files.length; index++) {
+                        const file = files[index];
+                        const name = file.name?.toLowerCase();
+
+                        if (name?.includes('team_photo_names')) {
+                            teamFiles.teamPhotoNames = file;
+                        }
+                        else if (name?.includes('team_photo')) {
+                            teamFiles.teamPhoto = file;
+                        }
+                        else if (name?.includes('team_names')) {
+                            teamFiles.teamNames = file;
+                        }
+                        else if (name?.includes('sponsor_names')) {
+                            teamFiles.teamSponsorNames = file;
+                        }
+                        else if (name?.includes('sme_names')) {
+                            teamFiles.teamSMENames = file;
+                        }
+                        else if (name?.includes('presentation')) {
+                            teamFiles.teamPresentation = file;
+                        }
+                        else if (name?.includes('poster')) {
+                            teamFiles.teamPoster = file;
+                        }
+                        else if (name?.includes('project_summary')) {
+                            teamFiles.teamProjectSummary = file;
+                        }
+                    }
+
+                    interface ParsedTeamContent {
+                        teamTitle?: string;
+                        teamPhoto?: string; // URL string.
+                        teamPhotoNames?: string;
+                        teamNames?: string[][];
+                        teamSponsorNames?: string[][];
+                        teamSMENames?: string[][];
+                        teamPresentation?: string; // URL string.
+                        teamPoster?: string; // URL string.
+                        teamProjectSummary?: string;
+                    }
+                    var parsedTeamContent: ParsedTeamContent = {};
+
+                    // Ensure that all team files have been set.
+                    // If any are missing then the team is invalid.
+                    const validTeam = Object.values(teamFiles).every(f => f !== undefined);
+                    if (validTeam) {
+                        console.log(`team is valid: ${folder.name}`)
+                        
+                        // Team names.
+                        // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+                        parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+                        // }
+
+                        // Team names.
+                        // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+                        parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+                        // }
+
+                        // Team sponsor names.
+                        // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
+                        parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
+                        // }
+                        
+                        // Team SME names.
+                        // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
+                        parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
+                        // }
+
+                        // Team photo names text.
+                        parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
+
+                        // Project summary text.
+                        parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
+
+
+                        // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
+                        
+                        // Build URLs to images and other shareable content.
+                        parsedTeamContent.teamPhoto = `https://drive.google.com/file/d/${teamFiles.teamPhoto?.id}/preview`;
+                        parsedTeamContent.teamPresentation = `https://drive.google.com/file/d/${teamFiles.teamPresentation?.id}/preview`;
+                        parsedTeamContent.teamPoster = `https://drive.google.com/file/d/${teamFiles.teamPoster?.id}/preview`;
+
+                        // return parsedTeamContent;
+
+                        parsedTeamContent.teamTitle = folder.name!;
+
+                        console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
+
+                        const team: Team = buildTeamsFromCSVStrings(
+                            parsedTeamContent.teamTitle!,
+                            parsedTeamContent.teamNames!,
+                            parsedTeamContent.teamSponsorNames!,
+                            parsedTeamContent.teamSMENames!,
+                            parsedTeamContent.teamProjectSummary!,
+                            parsedTeamContent.teamPhoto!,
+                            '', // team video
+                            parsedTeamContent.teamPresentation!,
+                            parsedTeamContent.teamPoster!,
+                            parsedTeamContent.teamPhotoNames!,
+                        )
+
+                        return team;
+
+                    }
+                    else {
+                        console.log(`team is NOT valid: ${folder.name}`)
+                    }
+                }
+            }))
+
+            console.log(`teams? ${JSON.stringify(teams)}`)
+
+            // // Set the fetching state.
+            // dispatch({ type: 'set-fetching', fetching: true });
+
+            // // Get folder and parent content.
+            // const l = await getFolderChildren(id);
+
+            // // Set folder and parent content and reset the fetching state.
+            // dispatch({ type: 'picker-complete', 
+            //     fetching: false,
+            //     fileList: l,
+            //     parentId: p,
+            // });
         }
 
         // Only run if the picked file exists and has an ID parameter.
-        if (pickedFile && pickedFile.id) {
-            run(pickedFile.id);
+        // if (pickedFile && pickedFile.id) {
+        //     run(pickedFile.id);
+        // }
+        if (pickedFolders.length > 0) {
+            run(pickedFolders);
         }
-    }, [pickedFile]);
+    }, [pickedFolders]);
 
 
 
@@ -185,13 +345,16 @@ export default function TeamBrochure({ session }: { session: Session }) {
             console.log('User clicked cancel/close button')
         } 
         else if (data.action === 'picked') {
-            console.log(`data? ${JSON.stringify(data)}`)
+            // console.log(`data? ${JSON.stringify(data)}`)
+            console.log(`picked? ${JSON.stringify(data)}`)
 
-            if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
+            dispatch({ type: 'set-pickedFolders', pickedFolders: data.docs });
 
-                // Set the current picked file; lets the React hooks take care of the rest.
-                dispatch({ type: 'set-pickedFile', pickedFile: data.docs[0] });
-            }
+            // if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
+
+            //     // Set the current picked file; lets the React hooks take care of the rest.
+            //     dispatch({ type: 'set-pickedFile', pickedFile: data.docs[0] });
+            // }
         }
         else if (data.action === 'loaded') {}
     }
@@ -206,7 +369,7 @@ export default function TeamBrochure({ session }: { session: Session }) {
             showUploadView: false,
             showUploadFolders: true,
             supportDrives: true,
-            multiselect: false,
+            multiselect: true,
             callbackFunction: handlePickerSelection,
             setParentFolder: parentId,
         })
@@ -241,7 +404,7 @@ export default function TeamBrochure({ session }: { session: Session }) {
 
             {/* Display selected file contents. */}
             <div className="p-5">
-                {fileList.map(file => <>
+                {pickedFolders.map(file => <>
                     <div key={file.id} className="pb-3">{JSON.stringify(file)}</div>
                 </>)}
             </div>
