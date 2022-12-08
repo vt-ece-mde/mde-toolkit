@@ -9,9 +9,16 @@
 // team_photo_names.txt -- Download team_photo_names.txt
 // team_photo.png -- (Note your team photo should present a professional team image)
 
+import { 
+    Team,
+    TeamMember,
+    Sponsor,
+    SME,
+} from '../../lib/parsing'
+
 export type TeamBrochurePhotoProps = {
-    sme_names: string[];
-    team_photo_names: string;
+    smes: SME[];
+    team_photo_names: string | string[] | string[][];
     team_photo_url: string; // URL to image.
 }
 export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
@@ -21,7 +28,7 @@ export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
                 <img src={props.team_photo_url} alt="Team Photo" />
                 <figcaption className="text-[#76777A] text-md font-normal">
                     <p>{props.team_photo_names}</p>
-                    <p>{`SME: ${props.sme_names.join(', ')}`}</p>
+                    <p>{`SME: ${props.smes.map(sme => `${sme.title} ${sme.firstName} ${sme.lastName}`).join(', ')}`}</p>
                 </figcaption>
             </figure>
         </div>
@@ -29,48 +36,31 @@ export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
 }
 
 
-export type TeamChallengeProps = {
-    project_summary: string;
-}
-export function TeamChallenge( { project_summary }: TeamChallengeProps ) {
+export function TeamChallenge( props: { project_summary: string } ) {
     return (<>
         <div className="text-[#008891] text-2xl font-normal font-mono">CHALLENGE</div>
-        <div className="text-[#008891] text-xl font-normal font-mono">{project_summary}</div>
+        <div className="text-[#008891] text-xl font-normal font-mono">{props.project_summary}</div>
     </>);
 }
 
 
-export type TeamMemberInfoProps = {
-    title: string;
-    last_name: string;
-    first_name: string;
-    email: string;
-    degrees: string;
-    major: string;
-    hometown: string;
-    state_or_country: string;
-    aspiration: string;
-    course_comment: string;
-}
-export function TeamMemberInfo( props: TeamMemberInfoProps ) {
+export function TeamMemberInfo( props: TeamMember ) {
     return (<>
         <div className="text-[#008891] text-2xl font-bold font-sans underline">
-            {`${props.first_name} ${props.last_name}`} <span className="text-[#939598] text-xl underline font-mono">{`${props.hometown}, ${props.state_or_country}`}</span>
+            {`${props.firstName} ${props.lastName}`} <span className="text-[#939598] text-xl underline font-mono">{`${props.hometown}, ${props.StateOrCountry}`}</span>
         </div>
-        <div className="pt-2 text-[#F57F28] text-lg font-bold">{props.degrees}, {props.major}</div>
+        <div className="pt-2 text-[#F57F28] text-lg font-bold">{props.degree}, {props.major}</div>
         <div className="pt-2 text-[#231F20] text-xl font-sans font-bold">
             Aspirations: <span className="text-[#231F20] text-lg font-serif font-normal">{props.aspiration}</span>
         </div>
         <div className="pt-2 text-[#231F20] text-xl font-bold font-sans">
-            Class Comment: <span className="text-[#231F20] text-lg font-serif font-normal">{props.course_comment}</span>
+            Class Comment: <span className="text-[#231F20] text-lg font-serif font-normal">{props.courseComment}</span>
         </div>
     </>);
 }
 
-export type TeamMembersProps = {
-    team_members: TeamMemberInfoProps[];
-}
-export function TeamMembers( props: TeamMembersProps ) {
+
+export function TeamMembers( props: { team_members: TeamMember[] } ) {
     return (<>
         {props.team_members.map((tm, index) => {
             return (
@@ -82,52 +72,41 @@ export function TeamMembers( props: TeamMembersProps ) {
     </>);
 }
 
-export type TeamProjectSponsorsProps = {
-    sponsor_names: string[];
-}
-export function TeamProjectSponsors( props: TeamProjectSponsorsProps ) {
+
+export function TeamProjectSponsors( props: { sponsors: Sponsor[] } ) {
     return (<>
         <div className="text-[#939598] text-center">
-            PROJECT SPONSOR: <span className="text-[#83003F]">{ props.sponsor_names.join(', ') }</span>
+            PROJECT SPONSOR: <span className="text-[#83003F]">{props.sponsors.map(sponsor => `${sponsor.title} ${sponsor.firstName} ${sponsor.lastName}`).join(', ')}</span>
         </div>
     </>);
 }
 
 
-export type TeamBrochureProps = {
-    project_name: string;
-    project_summary: string;
-    sme_names: string[];
-    sponsor_names: string[];
-    team_members: TeamMemberInfoProps[];
-    team_photo_names: string;
-    team_photo_url: string; // URL to image.
-}
-export default function TeamBrochure( props: TeamBrochureProps ) {
+export default function TeamBrochure( props: Team ) {
     return (<>
         <div className="p-5 grid grid-cols-1 gap-4">
 
             {/* Project name */}
-            <div className="mb-3 text-5xl text-[#83003F] text-center font-bold font-mono">{props.project_name}</div>
+            <div className="mb-3 text-5xl text-[#83003F] text-center font-bold font-mono">{props.projectTitle}</div>
 
             {/* Project info */}
             <div className="grid grid-cols-5 gap-4">
                 <div className="col-span-2">
-                    <TeamBrochurePhoto sme_names={props.sme_names} team_photo_names={props.team_photo_names} team_photo_url={props.team_photo_url}/>
+                    <TeamBrochurePhoto smes={props.smes} team_photo_names={props.teamPhotoNames} team_photo_url={props.imageUrl}/>
                 </div>
                 <div className="col-span-3 text-left">
-                    <TeamChallenge project_summary={props.project_summary} />
+                    <TeamChallenge project_summary={props.projectSummary} />
                 </div>
             </div>
 
             {/* Team information */}
             <div className="grid grid-cols-3 gap-4">
-                <TeamMembers team_members={props.team_members}/>
+                <TeamMembers team_members={props.teamMembers}/>
             </div>
 
             {/* Sponsor information */}
             <div>
-                <TeamProjectSponsors sponsor_names={props.sponsor_names}/>
+                <TeamProjectSponsors sponsors={props.sponsors}/>
             </div>
         </div>
     </>);
