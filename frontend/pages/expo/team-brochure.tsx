@@ -2,6 +2,7 @@ import { getSession } from 'next-auth/react'
 import { GetServerSidePropsContext } from 'next';
 import { drive_v3, google } from "googleapis";
 
+import { renderToStaticMarkup } from 'react-dom/server';
 import  { useEffect, useState, useReducer } from 'react';
 import { PickerCallback } from 'react-google-drive-picker/dist/typeDefs';
 import useDrivePicker from '../../components/googledrivepicker'
@@ -10,91 +11,51 @@ import { Session } from 'next-auth';
 import { listFoldersInFolder } from '../../lib/googledrive';
 import { buildTeamsFromCSVStrings, Team } from '../../lib/parsing';
 
+import TeamBrochure from '../../components/TeamBrochure';
+
 
 
 type State = {
     fetching: boolean;
-    // fileList: drive_v3.Schema$File[];
     parentId: string;
-    // pickedFile: drive_v3.Schema$File;
-
     pickedFolders: drive_v3.Schema$File[];
+    teams: Team[];
+}
+const defaultState: State = { 
+    fetching: false,
+    parentId: '',
+    pickedFolders: [],
+    teams: [],
 }
 
 type Action =
-    | { type: 'set-pickedFolders', pickedFolders: drive_v3.Schema$File[] }
-    | { type: 'set-fetching', fetching: boolean }
+    | { type: 'set-state', state: State } // Override state.
+    | { type: 'update-state', state: Partial<State> } // Update provided properties in state.
 
-    // | { type: 'set-fileList', fileList: drive_v3.Schema$File[] }
-    | { type: 'set-parentId', parentId: string }
-    // | { type: 'picker-complete', fetching: boolean, fileList: drive_v3.Schema$File[], parentId: string }
-
-export default function TeamBrochure({ session }: { session: Session }) {
-
-    // const [fileList, setFileList] = useState<drive_v3.Schema$File[]>([]);
-    // const [parentId, setParentId] = useState<string>(''); // Allows resume at previous folder on subsequent drive calls.
-    // const [fetching, setFetching] = useState<boolean>(false);
-
+export default function TeamBrochurePage({ session }: { session: Session }) {
 
     const reducer = (state: State, action: Action): State => {
         switch (action.type) {
-            case 'set-fetching':
-                console.log(`setting fetching: ${action.fetching}`)
+            case 'update-state':
                 return {
-                    ...state,
-                    fetching: action.fetching,
+                    ...state, // Pull in previous state values.
+                    ...action.state, // Override properties that were defined.
                 };
-            // case 'set-fileList':
-            //     return {
-            //         ...state,
-            //         fileList: action.fileList,
-            //     };
-            case 'set-parentId':
+            case 'set-state':
                 return {
-                    ...state,
-                    parentId: action.parentId,
-                };
-            // case 'set-pickedFile':
-            //     return {
-            //         ...state,
-            //         pickedFile: action.pickedFile,
-            //     };
-            // case 'picker-complete':
-            //     return {
-            //         ...state,
-            //         fetching: action.fetching,
-            //         fileList: action.fileList,
-            //         parentId: action.parentId,
-            //     };
-            case 'set-pickedFolders':
-                return {
-                    ...state,
-                    pickedFolders: action.pickedFolders,
+                    ...action.state,
                 };
             default:
-                return { 
-                    fetching: false,
-                    // fileList: [],
-                    parentId: '',
-                    // pickedFile: {},
-                    pickedFolders: [],
-                };
+                return defaultState;
         }
     }
 
     const [{
         fetching,
-        // fileList,
         parentId,
-        // pickedFile,
         pickedFolders,
-    }, dispatch] = useReducer(reducer, { 
-        fetching: false,
-        // fileList: [],
-        parentId: '',
-        // pickedFile: {},
-        pickedFolders: [],
-    })
+        teams,
+    }, dispatch] = useReducer(reducer, defaultState)
 
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
@@ -145,144 +106,177 @@ export default function TeamBrochure({ session }: { session: Session }) {
             return j;
         }
 
+        const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<Team|undefined> => {
+            if (folder.id) {
+                const files = await getFolderChildren(folder.id);
+
+                interface TeamFiles {
+                    // teamTitle?: drive_v3.Schema$File;
+                    teamPhoto?: drive_v3.Schema$File;
+                    teamPhotoNames?: drive_v3.Schema$File;
+                    teamNames?: drive_v3.Schema$File;
+                    teamSponsorNames?: drive_v3.Schema$File;
+                    teamSMENames?: drive_v3.Schema$File;
+                    teamPresentation?: drive_v3.Schema$File;
+                    teamPoster?: drive_v3.Schema$File;
+                    teamProjectSummary?: drive_v3.Schema$File;
+                }
+                var teamFiles: TeamFiles = {}
+
+                for (let index = 0; index < files.length; index++) {
+                    const file = files[index];
+                    const name = file.name?.toLowerCase();
+
+                    if (name?.includes('team_photo_names')) {
+                        teamFiles.teamPhotoNames = file;
+                    }
+                    else if (name?.includes('team_photo')) {
+                        teamFiles.teamPhoto = file;
+                    }
+                    else if (name?.includes('team_names')) {
+                        teamFiles.teamNames = file;
+                    }
+                    else if (name?.includes('sponsor_names')) {
+                        teamFiles.teamSponsorNames = file;
+                    }
+                    else if (name?.includes('sme_names')) {
+                        teamFiles.teamSMENames = file;
+                    }
+                    else if (name?.includes('presentation')) {
+                        teamFiles.teamPresentation = file;
+                    }
+                    else if (name?.includes('poster')) {
+                        teamFiles.teamPoster = file;
+                    }
+                    else if (name?.includes('project_summary')) {
+                        teamFiles.teamProjectSummary = file;
+                    }
+                }
+
+                interface ParsedTeamContent {
+                    teamTitle?: string;
+                    teamPhoto?: string; // URL string.
+                    teamPhotoNames?: string;
+                    teamNames?: string[][];
+                    teamSponsorNames?: string[][];
+                    teamSMENames?: string[][];
+                    teamPresentation?: string; // URL string.
+                    teamPoster?: string; // URL string.
+                    teamProjectSummary?: string;
+                }
+                var parsedTeamContent: ParsedTeamContent = {};
+
+                // Ensure that all team files have been set.
+                // If any are missing then the team is invalid.
+                // const validTeam = Object.values(teamFiles).every(f => f !== undefined && f.id !== undefined);
+                console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
+                const validTeam = (teamFiles.teamPhoto !== undefined)
+                    && (teamFiles.teamPhotoNames !== undefined)
+                    && (teamFiles.teamNames !== undefined)
+                    && (teamFiles.teamSponsorNames !== undefined)
+                    && (teamFiles.teamSMENames !== undefined)
+                    && (teamFiles.teamPresentation !== undefined)
+                    && (teamFiles.teamPoster !== undefined)
+                    && (teamFiles.teamProjectSummary !== undefined);
+                if (validTeam) {
+                    console.log(`team is valid: ${folder.name}`)
+                    
+                    // Team names.
+                    // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+                    parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+                    // }
+
+                    // Team names.
+                    // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+                    parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+                    // }
+
+                    // Team sponsor names.
+                    // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
+                    parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
+                    // }
+                    
+                    // Team SME names.
+                    // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
+                    parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
+                    // }
+
+                    // Team photo names text.
+                    parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
+
+                    // Project summary text.
+                    parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
+
+
+                    // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
+                    
+                    // Build URLs to images and other shareable content.
+                    parsedTeamContent.teamPhoto = teamFiles.teamPhoto?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPhoto?.id,
+                    }) : '';
+                    parsedTeamContent.teamPresentation = teamFiles.teamPresentation?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPresentation?.id,
+                    }) : '';
+                    parsedTeamContent.teamPoster = teamFiles.teamPoster?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPoster?.id,
+                    }) : '';
+
+                    // return parsedTeamContent;
+
+                    parsedTeamContent.teamTitle = folder.name!;
+
+                    console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
+
+                    const team: Team = buildTeamsFromCSVStrings(
+                        parsedTeamContent.teamTitle!,
+                        parsedTeamContent.teamNames!,
+                        parsedTeamContent.teamSponsorNames!,
+                        parsedTeamContent.teamSMENames!,
+                        parsedTeamContent.teamProjectSummary!,
+                        parsedTeamContent.teamPhoto!,
+                        '', // team video
+                        parsedTeamContent.teamPresentation!,
+                        parsedTeamContent.teamPoster!,
+                        parsedTeamContent.teamPhotoNames!,
+                    )
+
+                    return team;
+
+                }
+                else {
+                    console.log(`team is NOT valid: ${folder.name}`)
+                }
+            }
+        }
+
 
         const run = async (folders: drive_v3.Schema$File[]) => {
 
+            dispatch({ type: 'update-state', state: {
+                fetching: true,
+            }});
+
             // Get ID of parent folder to make subsequent Drive picker calls easier.
+            var p;
             if (folders[0].id) {
-                const p = await getFolderParent(folders[0].id);
-                dispatch({ type: 'set-parentId', parentId: p });
+                p = await getFolderParent(folders[0].id);
+                // dispatch({ type: 'update-state', state: {
+                //     parentId: p,
+                // }});
             }
 
-            const teams: (Team | undefined)[] = await Promise.all(folders.map(async (folder, index) => {
-                if (folder.id) {
-                    const files = await getFolderChildren(folder.id);
-
-                    interface TeamFiles {
-                        teamTitle?: drive_v3.Schema$File;
-                        teamPhoto?: drive_v3.Schema$File;
-                        teamPhotoNames?: drive_v3.Schema$File;
-                        teamNames?: drive_v3.Schema$File;
-                        teamSponsorNames?: drive_v3.Schema$File;
-                        teamSMENames?: drive_v3.Schema$File;
-                        teamPresentation?: drive_v3.Schema$File;
-                        teamPoster?: drive_v3.Schema$File;
-                        teamProjectSummary?: drive_v3.Schema$File;
-                    }
-                    var teamFiles: TeamFiles = {}
-
-                    for (let index = 0; index < files.length; index++) {
-                        const file = files[index];
-                        const name = file.name?.toLowerCase();
-
-                        if (name?.includes('team_photo_names')) {
-                            teamFiles.teamPhotoNames = file;
-                        }
-                        else if (name?.includes('team_photo')) {
-                            teamFiles.teamPhoto = file;
-                        }
-                        else if (name?.includes('team_names')) {
-                            teamFiles.teamNames = file;
-                        }
-                        else if (name?.includes('sponsor_names')) {
-                            teamFiles.teamSponsorNames = file;
-                        }
-                        else if (name?.includes('sme_names')) {
-                            teamFiles.teamSMENames = file;
-                        }
-                        else if (name?.includes('presentation')) {
-                            teamFiles.teamPresentation = file;
-                        }
-                        else if (name?.includes('poster')) {
-                            teamFiles.teamPoster = file;
-                        }
-                        else if (name?.includes('project_summary')) {
-                            teamFiles.teamProjectSummary = file;
-                        }
-                    }
-
-                    interface ParsedTeamContent {
-                        teamTitle?: string;
-                        teamPhoto?: string; // URL string.
-                        teamPhotoNames?: string;
-                        teamNames?: string[][];
-                        teamSponsorNames?: string[][];
-                        teamSMENames?: string[][];
-                        teamPresentation?: string; // URL string.
-                        teamPoster?: string; // URL string.
-                        teamProjectSummary?: string;
-                    }
-                    var parsedTeamContent: ParsedTeamContent = {};
-
-                    // Ensure that all team files have been set.
-                    // If any are missing then the team is invalid.
-                    const validTeam = Object.values(teamFiles).every(f => f !== undefined);
-                    if (validTeam) {
-                        console.log(`team is valid: ${folder.name}`)
-                        
-                        // Team names.
-                        // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-                        parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
-                        // }
-
-                        // Team names.
-                        // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-                        parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
-                        // }
-
-                        // Team sponsor names.
-                        // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
-                        parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
-                        // }
-                        
-                        // Team SME names.
-                        // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
-                        parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
-                        // }
-
-                        // Team photo names text.
-                        parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
-
-                        // Project summary text.
-                        parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
-
-
-                        // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
-                        
-                        // Build URLs to images and other shareable content.
-                        parsedTeamContent.teamPhoto = `https://drive.google.com/file/d/${teamFiles.teamPhoto?.id}/preview`;
-                        parsedTeamContent.teamPresentation = `https://drive.google.com/file/d/${teamFiles.teamPresentation?.id}/preview`;
-                        parsedTeamContent.teamPoster = `https://drive.google.com/file/d/${teamFiles.teamPoster?.id}/preview`;
-
-                        // return parsedTeamContent;
-
-                        parsedTeamContent.teamTitle = folder.name!;
-
-                        console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
-
-                        const team: Team = buildTeamsFromCSVStrings(
-                            parsedTeamContent.teamTitle!,
-                            parsedTeamContent.teamNames!,
-                            parsedTeamContent.teamSponsorNames!,
-                            parsedTeamContent.teamSMENames!,
-                            parsedTeamContent.teamProjectSummary!,
-                            parsedTeamContent.teamPhoto!,
-                            '', // team video
-                            parsedTeamContent.teamPresentation!,
-                            parsedTeamContent.teamPoster!,
-                            parsedTeamContent.teamPhotoNames!,
-                        )
-
-                        return team;
-
-                    }
-                    else {
-                        console.log(`team is NOT valid: ${folder.name}`)
-                    }
-                }
-            }))
+            const teams: Team[] = (await Promise.all<Team|undefined>(folders.map(parseTeamFolder))).filter(r => r !== undefined) as Team[];
 
             console.log(`teams? ${JSON.stringify(teams)}`)
+
+            dispatch({ type: 'update-state', state: {
+                fetching: false,
+                teams: teams,
+                parentId: p,
+            }});
 
             // // Set the fetching state.
             // dispatch({ type: 'set-fetching', fetching: true });
@@ -309,34 +303,109 @@ export default function TeamBrochure({ session }: { session: Session }) {
 
 
 
+    const exportTeamBrochurePageToHTMLString = (team: Team): string => {
+        console.log(`[${team.projectTitle}] rendering team: ${JSON.stringify(team)}`)
 
-    // const setFolderChildren = async (id: string) => {
+        const component = <TeamBrochure {...team} />;
 
-    //     // Get all children in selected folder.
-    //     console.log('fetching')
-    //     const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
-    //         type: 'all', // 'all'|'files'|'folders'
-    //     }))
-    //     const j = await res.json()
-    //     console.log(`GOT RES: ${JSON.stringify(j)}`)
+        // Convert component to static HTML markup.
+        const markup = renderToStaticMarkup(component)
 
-    //     // Set list of children.
-    //     setFileList(j)
-    // }
+        // Build HTML core template and insert component markup.
+        // Since component is styled using Tailwind, include the CDN reference.
+        const html: string = `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${team.projectTitle}</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+            </head>
+            <body>
+                <div>${markup}</div>
+            </body>
+        </html>
+        `;
 
-    // const setFolderParent = async (id: string) => {
-    //     // Get parent folder for easy access next time.
-    //     const res = await fetch(`/api/google/drive/get?`+ new URLSearchParams({
-    //         fileId: id,
-    //         fields: "parents",
-    //         supportsAllDrives: 'true',
-    //     }))
-    //     const j = await res.json()
-    //     console.log(`GOT res: ${JSON.stringify(j)}`)
-    //     if (j.error === undefined ) {
-    //         setParentId(j.parents[0])
-    //     }
-    // }
+        console.log(`[${team.projectTitle}] HTML? ${JSON.stringify(html)}`)
+
+        return html;
+    }
+
+
+    const downloadTeamAsHTML = async (team: Team) => {
+
+        // Convert team page to HTML string.
+        const html: string = exportTeamBrochurePageToHTMLString(team);
+
+        // Download as HTML file.
+        const file = new Blob([html], {type: 'text/html'});
+        const element = document.createElement("a");
+        element.href = URL.createObjectURL(file);
+        element.download = `${team.projectTitle}.html`; // Name of file.
+        document.body.appendChild(element); // Required for this to work in FireFox
+        element.click();
+    }
+
+    const downloadTeamListAsHTML = async (teams: Team[]) => {
+        for (let index = 0; index < teams.length; index++) {
+            const team = teams[index];
+            downloadTeamAsHTML(team);
+        }
+    }
+
+    const uploadTeamToGoogleDrive = async (team: Team, root: drive_v3.Schema$File) => {
+
+        // Convert team page to HTML string.
+        const html: string = exportTeamBrochurePageToHTMLString(team);
+
+        // https://developers.google.com/drive/api/guides/manage-uploads
+
+        // // Download as HTML file.
+        // const file = new Blob([html], {type: 'text/html'});
+        // const element = document.createElement("a");
+        // element.href = URL.createObjectURL(file);
+        // element.download = `${team.projectTitle}.html`; // Name of file.
+        // document.body.appendChild(element); // Required for this to work in FireFox
+        // element.click();
+    }
+
+    const uploadTeamListToGoogleDrive = async (teams: Team[]) => {
+
+        const uploadTeams = async (root: drive_v3.Schema$File) => {
+            for (let index = 0; index < teams.length; index++) {
+                const team = teams[index];
+                uploadTeamToGoogleDrive(team, root);
+            }
+        }
+
+
+        const handler = async (data: PickerCallback) => {
+            if (data.action === 'picked') {
+                console.log(`UPLOADING TO: ${JSON.stringify(data.docs[0])}`)
+                uploadTeams(data.docs[0]);
+            }
+        }
+
+
+        openPicker({
+            clientId: "", // Not required, but must be provided as an empty string.
+            developerKey: "", // Not required, but must be provided as an empty string.
+            token: access_token, // pass oauth token in case you already have one
+            viewId: "DOCS", // All Google Drive document types.
+            showUploadView: false,
+            showUploadFolders: true,
+            supportDrives: true,
+            multiselect: false,
+            callbackFunction: handler,
+            // setParentFolder: parentId,
+        })
+
+        // for (let index = 0; index < teams.length; index++) {
+        //     const team = teams[index];
+        //     uploadTeamToGoogleDrive(team);
+        // }
+    }
 
 
     const handlePickerSelection = async (data: PickerCallback) => {
@@ -348,7 +417,10 @@ export default function TeamBrochure({ session }: { session: Session }) {
             // console.log(`data? ${JSON.stringify(data)}`)
             console.log(`picked? ${JSON.stringify(data)}`)
 
-            dispatch({ type: 'set-pickedFolders', pickedFolders: data.docs });
+            // dispatch({ type: 'set-pickedFolders', pickedFolders: data.docs });
+            dispatch({ type: 'update-state', state: {
+                pickedFolders: data.docs,
+            }});
 
             // if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
 
@@ -406,6 +478,33 @@ export default function TeamBrochure({ session }: { session: Session }) {
             <div className="p-5">
                 {pickedFolders.map(file => <>
                     <div key={file.id} className="pb-3">{JSON.stringify(file)}</div>
+                </>)}
+            </div>
+            <div className="p-5">
+                {teams.length > 0 ? (<>
+                    <div className="flex flex-col items-center justify-center">
+                        <div className='mb-4'>How would you like to use the team brochure pages?</div>
+                        <div className="flex flex-row space-x-3">
+                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(teams) }>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                            </svg>
+                                Upload to Google Drive
+                            </button>
+                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(teams) }>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                                Download as HTML
+                            </button>
+                        </div>
+                    </div>
+                </>) : null}
+                {teams.map((team, index) => <>
+                    <div key={index} className="pb-3">
+                        <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+                        <TeamBrochure {...team} />
+                    </div>
                 </>)}
             </div>
         </div>
