@@ -14,6 +14,32 @@ import { buildTeamsFromCSVStrings, Team } from '../../lib/parsing';
 import TeamBrochure from '../../components/TeamBrochure';
 
 
+export async function uploadDriveFileMultipart(token: string, file: Blob, metadata: any): Promise<any> {
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', file);
+
+    const url = `https://www.googleapis.com/upload/drive/v3/files?` + new URLSearchParams({
+        uploadType: 'multipart',
+        supportsAllDrives: 'true',
+    });
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            body: form,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        return error
+    }
+}
+
 
 type State = {
     fetching: boolean;
@@ -60,11 +86,14 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     const access_token = session?.access_token;
     const refresh_token = session?.refresh_token;
 
-    const [openPicker, authResponse] = useDrivePicker();  
+    const [openPicker, authResponse] = useDrivePicker();
+
+    // console.log(`ACCESS TOKEN: ${JSON.stringify(access_token)}`)
 
 
 
     // const [pickedFile, setPickedFile] = useState<drive_v3.Schema$File>();
+
 
 
     useEffect(() => {
@@ -354,12 +383,43 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         }
     }
 
+
+
+    const testUpload = async () => {
+        // parent
+        // 1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C
+
+        const html: string = `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Some Title</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+            </head>
+            <body>
+                <div>This is a test</div>
+            </body>
+        </html>
+        `;
+        const file = new Blob([html], {type: 'text/html'});
+        const metadata = {
+            name: 'testhtml.html', // This is what the file will be named in Drive.
+            parents: ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'], // This is the parent folder.
+        }
+        uploadDriveFileMultipart(access_token, file, metadata)
+            .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
+            .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
+    }
+
     const uploadTeamToGoogleDrive = async (team: Team, root: drive_v3.Schema$File) => {
 
         // Convert team page to HTML string.
         const html: string = exportTeamBrochurePageToHTMLString(team);
 
         // https://developers.google.com/drive/api/guides/manage-uploads
+
+
 
         // // Download as HTML file.
         // const file = new Blob([html], {type: 'text/html'});
@@ -450,6 +510,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
     return (<>
         <div className='flex flex-col items-center justify-center pt-4'>
+
+            <button onClick={ _ => testUpload() } className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800" disabled={ fetching }>TEST UPLOAD</button>
 
             {/* Title with instruction text */}
             <div className='text-6xl font-bold mb-4'>Team Brochure Page</div>
