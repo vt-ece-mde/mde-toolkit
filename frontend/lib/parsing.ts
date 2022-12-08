@@ -308,8 +308,8 @@ const recursiveStringTrim = (sar: string | string[] | string[][]): string | stri
 
 export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
     smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
-    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string, teamPhotoNames: string | string[] | string[][]) : Team
-{
+    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string, teamPhotoNames: string | string[] | string[][]) : Team {
+
     // Parse team names
     const teamMembers: TeamMember[] = parseTeamNames(teamNamesArr);
 
