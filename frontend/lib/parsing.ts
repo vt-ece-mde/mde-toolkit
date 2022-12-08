@@ -69,6 +69,7 @@ export interface Team
     sponsors: Sponsor[];
     smes: SME[];
     projectSummary: string;
+    teamPhotoNames: string | string[] | string[][];
     imageUrl: string;
     videoUrl: string;
     presentationUrl: string;
@@ -289,10 +290,25 @@ function parseSMENames(smeNamesArr: string[][]): SME[] {
     return smes;
 }
 
+/** 
+ * Helper function that handles trimming of strings, and variable-depth lists of strings through recursion.
+ */
+const recursiveStringTrim = (sar: string | string[] | string[][]): string | string[] | string[][] => {
+    if (typeof sar === 'string') {
+        return sar.trim();
+    }
+    else if (Array.isArray(sar)) {
+        return sar.map(item => recursiveStringTrim(item)) as string[]
+    }
+    else {
+        return sar
+    }
+}
+
 
 export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
     smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
-    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string) : Team
+    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string, teamPhotoNames: string | string[] | string[][]) : Team
 {
     // Parse team names
     const teamMembers: TeamMember[] = parseTeamNames(teamNamesArr);
@@ -308,12 +324,14 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
     team.teamMembers = teamMembers;
     team.sponsors = sponsors;
     team.smes = smes;
-    team.projectSummary = projectSummaryStr.trim();
+    team.projectSummary = recursiveStringTrim(projectSummaryStr) as string;
     team.imageUrl = imageLocationStr;
     team.videoUrl = teamVideoURL;
     team.presentationUrl = teamPowerPointURL;
     team.posterUrl = teamPosterURL;
-    team.projectTitle = teamProjectTitle.trim();
+    team.projectTitle = recursiveStringTrim(teamProjectTitle) as string;
+    team.teamPhotoNames = recursiveStringTrim(teamPhotoNames);
+
 
     return team;
 }
