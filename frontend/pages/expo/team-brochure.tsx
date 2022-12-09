@@ -613,7 +613,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             clientId: "", // Not required, but must be provided as an empty string.
             developerKey: "", // Not required, but must be provided as an empty string.
             token: access_token, // pass oauth token in case you already have one
-            viewId: "DOCS", // All Google Drive document types.
+            // viewId: "DOCS", // All Google Drive document types.
+            viewId: "FOLDERS", // Only show folders.
             showUploadView: false,
             showUploadFolders: true,
             supportDrives: true,
@@ -658,7 +659,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             clientId: "", // Not required, but must be provided as an empty string.
             developerKey: "", // Not required, but must be provided as an empty string.
             token: access_token, // pass oauth token in case you already have one
-            viewId: "DOCS", // All Google Drive document types.
+            // viewId: "DOCS", // All Google Drive document types.
+            viewId: "FOLDERS", // Only show folders.
             showUploadView: false,
             showUploadFolders: true,
             supportDrives: true,
@@ -700,7 +702,10 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             {/* Display selected file contents. */}
             <div className="p-5">
                 {pickedFolders.map(file => <>
-                    <div key={file.id} className="pb-3">{JSON.stringify(file)}</div>
+                    {/* <div key={file.id} className="pb-3">{JSON.stringify(file)}</div> */}
+                    <div key={file.id} className="pb-3">
+                        <a href='#'>{JSON.stringify(file.name)}</a>
+                    </div>
                 </>)}
             </div>
             <div className="p-5">
