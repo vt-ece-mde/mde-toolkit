@@ -125,22 +125,35 @@ const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> 
 }
 
 
+interface ParsedTeam {
+    team?: Team,
+    status: any,
+}
+
 type State = {
     fetching: boolean;
     parentId: string;
     pickedFolders: drive_v3.Schema$File[];
-    teams: Team[];
+    // teams: Team[];
+    teams: Map<string, ParsedTeam>;
+    // teams_parsing_status: Map<string, any>;
+    // teams: { id: string, team: Team }[];
 }
 const defaultState: State = { 
     fetching: false,
     parentId: '',
     pickedFolders: [],
-    teams: [],
+    // teams: [],
+    teams: new Map<string, ParsedTeam>(),
+    // teams_parsing_status: new Map<string, any>(),
+    // teams: { id: string, },
 }
 
 type Action =
     | { type: 'set-state', state: State } // Override state.
     | { type: 'update-state', state: Partial<State> } // Update provided properties in state.
+    // | { type: 'set-team', id: string, team?: Team, status?: any } // Update provided properties in state.
+    | { type: 'set-team', id: string, pt: ParsedTeam } // Update provided properties in state.
 
 export default function TeamBrochurePage({ session }: { session: Session }) {
 
@@ -154,6 +167,13 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             case 'set-state':
                 return {
                     ...action.state,
+                };
+            case 'set-team':
+                return {
+                    ...state,
+                    teams: state.teams.set(action.id, action.pt),
+                    // teams: state.teams.set(action.id, action.team),
+                    // teams_parsing_status: state.teams_parsing_status.set(action.id, action.status),
                 };
             default:
                 return defaultState;
@@ -219,7 +239,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             return j;
         }
 
-        const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<Team|undefined> => {
+        const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<{ team?: Team, status: any }> => {
             if (folder.id) {
                 const files = await getFolderChildren(folder.id);
 
@@ -356,13 +376,28 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         parsedTeamContent.teamPhotoNames!,
                     )
 
-                    return team;
+                    return {
+                        team: team,
+                        status: {
+                            ok: true,
+                        },
+                    };
 
                 }
                 else {
                     console.log(`team is NOT valid: ${folder.name}`)
+                    return {
+                        status: {
+                            error: 'team is not valid',
+                        },
+                    };
                 }
             }
+            return {
+                status: {
+                    error: 'undefined folder ID',
+                },
+            };
         }
 
 
@@ -376,19 +411,30 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             var p;
             if (folders[0].id) {
                 p = await getFolderParent(folders[0].id);
-                // dispatch({ type: 'update-state', state: {
-                //     parentId: p,
-                // }});
+                dispatch({ type: 'update-state', state: {
+                    parentId: p,
+                }});
             }
 
-            const teams: Team[] = (await Promise.all<Team|undefined>(folders.map(parseTeamFolder))).filter(r => r !== undefined) as Team[];
+            // Async parse team folders.
+            // For each folder, add the parsed team to the state.
+            folders.map(async (folder) => {
+                const { team, status } = await parseTeamFolder(folder);
+                dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status } });
+                // // Add team to state if the team is defined.
+                // if (team !== undefined) {
+                //     dispatch({ type: 'set-team', id: folder.id!, team: team });
+                // }
+            })
 
-            console.log(`teams? ${JSON.stringify(teams)}`)
+            // const teams: Team[] = (await Promise.all<Team|undefined>(folders.map(parseTeamFolder))).filter(r => r !== undefined) as Team[];
+
+            // console.log(`teams? ${JSON.stringify(teams)}`)
 
             dispatch({ type: 'update-state', state: {
                 fetching: false,
-                teams: teams,
-                parentId: p,
+                // teams: teams,
+                // parentId: p,
             }});
 
             // // Set the fetching state.
@@ -461,6 +507,9 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     }
 
     const downloadTeamListAsHTML = async (teams: Team[]) => {
+        // teams.forEach((team, key) => {
+        //     downloadTeamAsHTML(team);
+        // });
         for (let index = 0; index < teams.length; index++) {
             const team = teams[index];
             downloadTeamAsHTML(team);
@@ -594,6 +643,9 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     const uploadTeamListToGoogleDrive = async (teams: Team[]) => {
 
         const uploadTeams = async (root: drive_v3.Schema$File) => {
+            // teams.forEach((team, key) => {
+            //     uploadTeamToGoogleDrive(team, root);
+            // });
             for (let index = 0; index < teams.length; index++) {
                 const team = teams[index];
                 uploadTeamToGoogleDrive(team, root);
@@ -691,35 +743,76 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             {/* Loading spinner */}
             { fetching ? (<>
                 <div className='flex items-center justify-center'>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p>Loading...</p>
-            </div>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>Loading...</p>
+                </div>
             </>) : null }
 
             {/* Display selected file contents. */}
             <div className="p-5">
                 {pickedFolders.map(file => <>
                     {/* <div key={file.id} className="pb-3">{JSON.stringify(file)}</div> */}
-                    <div key={file.id} className="pb-3">
-                        <a href='#'>{JSON.stringify(file.name)}</a>
+                    <div key={file.id} className="pb-3 flex flex-row">
+                        <div>
+                            <a href='#'>{JSON.stringify(file.name)}</a>
+                        </div>
+                        <div>
+                            {(() => {
+                                if (!teams.has(file.id!)) {
+                                    return (<>
+                                        <div className='flex flex-row ml-3'>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <p>Loading...</p>
+                                        </div>
+                                    </>);
+                                }
+                                else if (teams.get(file.id!)?.status.ok !== undefined) {
+                                    return (<>
+                                        <div className='flex flex-row ml-3'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 stroke-green-500">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                            <p>OK</p>
+                                        </div>
+                                    </>);
+                                }
+                                else if (teams.get(file.id!)?.status.error !== undefined) {
+                                    // return (<p>ERROR: {JSON.stringify(teams.get(file.id!)?.status.error)}</p>);
+                                    return (<>
+                                        <div className='flex flex-row ml-3'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                            </svg>
+                                            <p>ERROR: {JSON.stringify(teams.get(file.id!)?.status.error)}</p>
+                                        </div>
+                                    </>);
+                                }
+                            })()}
+                        </div>
                     </div>
                 </>)}
             </div>
             <div className="p-5">
-                {teams.length > 0 ? (<>
+
+                {/* Area to show list of teams selected. */}
+                <div>
+                {teams.size > 0 ? (<>
                     <div className="flex flex-col items-center justify-center">
                         <div className='mb-4'>How would you like to use the team brochure pages?</div>
                         <div className="flex flex-row space-x-3">
-                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(teams) }>
+                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) }>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                             </svg>
                                 Upload to Google Drive
                             </button>
-                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(teams) }>
+                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) }>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
@@ -728,12 +821,22 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         </div>
                     </div>
                 </>) : null}
-                {teams.map((team, index) => <>
-                    <div key={index} className="pb-3">
-                        <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
-                        <TeamBrochure {...team} />
-                    </div>
-                </>)}
+                </div>
+
+                {/* Area to display actual team pages. */}
+                <div>
+                {Array.from(teams.entries()).map(([key, pt], index) => {
+                    // Render team page if the material was successfully parsed.
+                    if (pt.team !== undefined) {
+                        return (<>
+                            <div key={key} className="pb-3">
+                                <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+                                <TeamBrochure {...pt.team} />
+                            </div>
+                        </>);
+                    }
+                })}
+                </div>
             </div>
         </div>
     </>);
