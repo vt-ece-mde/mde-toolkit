@@ -545,24 +545,50 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         // Convert team page to HTML string.
         const html: string = exportTeamBrochurePageToHTMLString(team);
 
-        // https://developers.google.com/drive/api/guides/manage-uploads
+        // Create file blob to upload.
+        const file = new Blob([html], {type: 'text/html'});
+        const name = `${team.projectTitle}.html`; // This is what the file will be named in Drive.
+        // const parents = ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C']; // This is the parent folder.
+        const parents = [root.id!]; // This is the parent folder.
 
-        // const client = google.drive({ auth: access_token, version: 'v3' })
-        // client.files.list({
-        //     q: `name contains`
-        //     supportsAllDrives: true,
-        //     includeItemsFromAllDrives: true,
-        // })
+        // First, check if the file exists (using name as the identifier) at the given root directory.
+        const query = `name contains '${name}' and '${parents[0]}' in parents and trashed=false`;
+        const files = await driveGetFileIfExists(query);
 
-
-
-        // // Download as HTML file.
-        // const file = new Blob([html], {type: 'text/html'});
-        // const element = document.createElement("a");
-        // element.href = URL.createObjectURL(file);
-        // element.download = `${team.projectTitle}.html`; // Name of file.
-        // document.body.appendChild(element); // Required for this to work in FireFox
-        // element.click();
+        // File already exists.
+        // So, update the existing file with new content.
+        if (files.length > 0) {
+            console.log(`FILE ALREADY EXISTS: ${JSON.stringify(files)}`)
+            try {
+                const json = await driveUpdateFile({
+                    token: access_token,
+                    id: files[0].id!,
+                    file: file,
+                    metadata: {
+                        name: name,
+                    },
+                })
+                console.log(`Updated file: ${JSON.stringify(json)}`)
+            } catch (error) {
+                console.table(error)
+            }
+        }
+        else {
+            console.log(`FILE DOES NOT EXIST`)
+            try {
+                const json = await driveCreateFile({
+                    token: access_token,
+                    file: file,
+                    metadata: {
+                        name: name,
+                        parents: parents,
+                    },
+                    });
+                console.log(`Created file: ${JSON.stringify(json)}`);
+            } catch (error) {
+                console.table(error)
+            }
+        }
     }
 
     const uploadTeamListToGoogleDrive = async (teams: Team[]) => {
