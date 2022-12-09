@@ -753,8 +753,93 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
             {/* Display selected file contents. */}
             <div className="p-5">
-                {pickedFolders.map(file => <>
-                    {/* <div key={file.id} className="pb-3">{JSON.stringify(file)}</div> */}
+                {pickedFolders.length === 0 ? null : <>
+                    <div className=''>
+                        <table className='table-fixed border-separate border-spacing-y-2 border-spacing-x-3'>
+                            <thead className='text-xl font-bold'>
+                                <tr>
+                                    <td>Team Folder</td>
+                                    <td>Parsing Status</td>
+                                    <td>Links</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pickedFolders.map(folder => <>
+                                    <tr className='odd:bg-white even:bg-slate-100'>
+                                        <td>
+                                            {/* <a href='#' onClick={() => {
+                                                dispatch({ type: 'update-state', state: {
+                                                    selectedTeamToDisplay: folder.id!,
+                                                }});
+                                            }}>{JSON.stringify(folder.name)}</a> */}
+                                            <p>{folder.name}</p>
+                                        </td>
+                                        <td>
+                                            {(() => {
+                                            if (!teams.has(folder.id!)) {
+                                                return (<>
+                                                    <div className='flex flex-row'>
+                                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        <p>Loading...</p>
+                                                    </div>
+                                                </>);
+                                            }
+                                            else if (teams.get(folder.id!)?.status.ok !== undefined) {
+                                                return (<>
+                                                    <div className='flex flex-row'>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 stroke-green-500">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                        </svg>
+                                                        <p>OK</p>
+                                                    </div>
+                                                </>);
+                                            }
+                                            else if (teams.get(folder.id!)?.status.error !== undefined) {
+                                                // return (<p>ERROR: {JSON.stringify(teams.get(folder.id!)?.status.error)}</p>);
+                                                return (<>
+                                                    <div className='flex flex-row'>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                                        </svg>
+                                                        <p>ERROR: {JSON.stringify(teams.get(folder.id!)?.status.error)}</p>
+                                                    </div>
+                                                </>);
+                                            }
+                                        })()}
+                                        </td>
+                                        <td>
+                                            <div className='flex flex-row space-x-4'>
+                                                <a className='flex flex-row' href='#' onClick={() => {
+                                                    dispatch({ type: 'update-state', state: {
+                                                        selectedTeamToDisplay: folder.id!,
+                                                    }});
+                                                }}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-1">
+                                                        <path d="M11.625 16.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75z" />
+                                                        <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zm6 16.5c.66 0 1.277-.19 1.797-.518l1.048 1.048a.75.75 0 001.06-1.06l-1.047-1.048A3.375 3.375 0 1011.625 18z" clipRule="evenodd" />
+                                                        <path d="M14.25 5.25a5.23 5.23 0 00-1.279-3.434 9.768 9.768 0 016.963 6.963A5.23 5.23 0 0016.5 7.5h-1.875a.375.375 0 01-.375-.375V5.25z" />
+                                                    </svg>
+                                                    Preview
+                                                </a>
+                                                <a className='flex flex-row' href={`https://drive.google.com/drive/u/1/folders/${folder.id}`} target="_blank" rel="noopener noreferrer">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-1">
+                                                        <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Open In Google Drive
+                                                    </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </>)}
+                            </tbody>
+                        </table>
+                    </div>
+                </>}
+
+                {/* {pickedFolders.map(file => <>
                     <div key={file.id} className="pb-3 flex flex-row">
                         <div>
                             <a href='#' onClick={() => {
@@ -800,7 +885,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                             })()}
                         </div>
                     </div>
-                </>)}
+                </>)} */}
             </div>
             <div className="p-5">
 
