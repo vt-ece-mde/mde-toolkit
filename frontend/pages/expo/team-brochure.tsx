@@ -134,10 +134,8 @@ type State = {
     fetching: boolean;
     parentId: string;
     pickedFolders: drive_v3.Schema$File[];
-    // teams: Team[];
     teams: Map<string, ParsedTeam>;
-    // teams_parsing_status: Map<string, any>;
-    // teams: { id: string, team: Team }[];
+    selectedTeamToDisplay: string;
 }
 const defaultState: State = { 
     fetching: false,
@@ -145,6 +143,7 @@ const defaultState: State = {
     pickedFolders: [],
     // teams: [],
     teams: new Map<string, ParsedTeam>(),
+    selectedTeamToDisplay: '', // Empty for undefined, teams key string for defined.
     // teams_parsing_status: new Map<string, any>(),
     // teams: { id: string, },
 }
@@ -185,6 +184,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         parentId,
         pickedFolders,
         teams,
+        selectedTeamToDisplay,
     }, dispatch] = useReducer(reducer, defaultState)
 
     const access_token = session?.access_token;
@@ -757,7 +757,11 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                     {/* <div key={file.id} className="pb-3">{JSON.stringify(file)}</div> */}
                     <div key={file.id} className="pb-3 flex flex-row">
                         <div>
-                            <a href='#'>{JSON.stringify(file.name)}</a>
+                            <a href='#' onClick={() => {
+                                dispatch({ type: 'update-state', state: {
+                                    selectedTeamToDisplay: file.id!,
+                                }});
+                            }}>{JSON.stringify(file.name)}</a>
                         </div>
                         <div>
                             {(() => {
@@ -825,17 +829,23 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
                 {/* Area to display actual team pages. */}
                 <div>
-                {Array.from(teams.entries()).map(([key, pt], index) => {
-                    // Render team page if the material was successfully parsed.
-                    if (pt.team !== undefined) {
-                        return (<>
-                            <div key={key} className="pb-3">
-                                <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
-                                <TeamBrochure {...pt.team} />
-                            </div>
-                        </>);
-                    }
-                })}
+                    {(() => {
+                        if (selectedTeamToDisplay.length > 0) {
+                            // const team = teams.get(selectedTeamToDisplay)!.team
+                            if (teams.has(selectedTeamToDisplay) && teams.get(selectedTeamToDisplay)?.status.ok !== undefined) {
+                                return (<>
+                                    <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+                                    <TeamBrochure {...teams.get(selectedTeamToDisplay)!.team!} />
+                                </>);
+                            }
+                            else {
+                                return (<>
+                                    <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+                                    <p>Team does not exist: {pickedFolders.find(folder => folder.id! === selectedTeamToDisplay)?.name || '(empty)'}</p>
+                                </>);
+                            }
+                        }
+                    })()}
                 </div>
             </div>
         </div>
