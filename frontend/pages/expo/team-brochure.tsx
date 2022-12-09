@@ -14,11 +14,15 @@ import { buildTeamsFromCSVStrings, Team } from '../../lib/parsing';
 import TeamBrochure from '../../components/TeamBrochure';
 
 
-export async function uploadDriveFileMultipart(token: string, file: Blob, metadata: any): Promise<any> {
 
+export async function driveCreateFile(params: { 
+        token: string,
+        file: Blob,
+        metadata: any,
+    }): Promise<any> {
     const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-    form.append('file', file);
+    form.append('metadata', new Blob([JSON.stringify(params.metadata)], {type: 'application/json'}));
+    form.append('file', params.file);
 
     const url = `https://www.googleapis.com/upload/drive/v3/files?` + new URLSearchParams({
         uploadType: 'multipart',
@@ -30,13 +34,93 @@ export async function uploadDriveFileMultipart(token: string, file: Blob, metada
             method: 'POST',
             body: form,
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${params.token}`,
             },
         });
         const json = await res.json();
         return json;
     } catch (error) {
         return error
+    }
+}
+
+export async function driveUpdateFile(params: { 
+        token: string,
+        id: string,
+        file: Blob,
+        metadata: any,
+    }): Promise<any> {
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(params.metadata)], {type: 'application/json'}));
+    form.append('file', params.file);
+
+    const url = `https://www.googleapis.com/upload/drive/v3/files/${params.id}?` + new URLSearchParams({
+        uploadType: 'multipart',
+        // uploadType: 'media',
+        supportsAllDrives: 'true',
+    });
+
+    try {
+        const res = await fetch(url, {
+            method: 'PATCH',
+            body: form,
+            // body: params.file,
+            headers: {
+                'Authorization': `Bearer ${params.token}`,
+            },
+        });
+        console.log(`RES: ${JSON.stringify(res)}`)
+        const json = await res.json();
+        return json;
+    } catch (error) {
+        // console.log(`ERROR: ${JSON.stringify(error)}`)
+        console.table(error);
+        return error
+    }
+}
+
+// export async function driveUploadFileMultipart(token: string, file: Blob, metadata: any, method: string = 'POST', params: any = {}): Promise<any> {
+
+//     const form = new FormData();
+//     form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+//     form.append('file', file);
+
+//     const url = `https://www.googleapis.com/upload/drive/v3/files?` + new URLSearchParams({
+//         uploadType: 'multipart',
+//         supportsAllDrives: 'true',
+//         ...params,
+//     });
+
+//     try {
+//         const res = await fetch(url, {
+//             method: method,
+//             body: form,
+//             headers: {
+//                 'Authorization': `Bearer ${token}`,
+//             },
+//         });
+//         const json = await res.json();
+//         return json;
+//     } catch (error) {
+//         return error
+//     }
+// }
+
+const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> => {
+    const url = '/api/google/drive/files/list?' + new URLSearchParams({
+        // q: `name contains 'testhtml.html' and '1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C' in parents`,
+        q: q,
+        supportsAllDrives: 'true',
+        includeItemsFromAllDrives: 'true',
+    });
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (json.files !== undefined) {
+        return json.files as drive_v3.Schema$File[];
+    }
+    else {
+        return [];
     }
 }
 
@@ -383,11 +467,10 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         }
     }
 
-
-
     const testUpload = async () => {
         // parent
         // 1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C
+
 
         const html: string = `
         <!DOCTYPE html>
@@ -399,17 +482,62 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             </head>
             <body>
                 <div>This is a test</div>
+                <div>Current date and time: ${new Date().toLocaleString()}</div>
             </body>
         </html>
         `;
         const file = new Blob([html], {type: 'text/html'});
-        const metadata = {
-            name: 'testhtml.html', // This is what the file will be named in Drive.
-            parents: ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'], // This is the parent folder.
+        
+        const name = 'testhtml.html' // This is what the file will be named in Drive.
+        const parents = ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'] // This is the parent folder.
+        const query = `name contains '${name}' and '${parents[0]}' in parents and trashed=false`;
+        const files = await driveGetFileIfExists(query);
+
+        if (files.length > 0) {
+            console.log(`FILE ALREADY EXISTS: ${JSON.stringify(files)}`)
+
+            const metadata = {
+                name: 'testhtml.html', // This is what the file will be named in Drive.
+                // Cannot add parents in metadata of update.
+            }
+
+            try {
+                console.log(`in try`)
+                const json = await driveUpdateFile({
+                    token: access_token,
+                    id: files[0].id!,
+                    file: file,
+                    metadata: metadata,
+                })
+                console.log(`GOT JSON BACK: ${JSON.stringify(json)}`)
+            } catch (error) {
+                console.table(error)
+            }
         }
-        uploadDriveFileMultipart(access_token, file, metadata)
-            .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
-            .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
+        else {
+
+            const metadata = {
+                name: 'testhtml.html', // This is what the file will be named in Drive.
+                parents: ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'], // This is the parent folder.
+            }
+
+            console.log(`FILE DOES NOT EXIST`)
+            driveCreateFile({
+                token: access_token,
+                file: file,
+                metadata: metadata,
+                })
+                .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
+                .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
+        }
+
+        // driveUploadFileMultipart(access_token, file, metadata)
+        //     .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
+        //     .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
+
+        // TODO: check if file exists before creating. If it exists, then PATCH instead with fileId to update existing file. Otherwise POST to create new file.
+
+        // TODO: upload team HTML files to Drive.
     }
 
     const uploadTeamToGoogleDrive = async (team: Team, root: drive_v3.Schema$File) => {
@@ -418,6 +546,13 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         const html: string = exportTeamBrochurePageToHTMLString(team);
 
         // https://developers.google.com/drive/api/guides/manage-uploads
+
+        // const client = google.drive({ auth: access_token, version: 'v3' })
+        // client.files.list({
+        //     q: `name contains`
+        //     supportsAllDrives: true,
+        //     includeItemsFromAllDrives: true,
+        // })
 
 
 
