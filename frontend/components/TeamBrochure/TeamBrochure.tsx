@@ -16,16 +16,44 @@ import {
     SME,
 } from '../../lib/parsing'
 
+
+function DefaultImage({ src, alt }: { src: string | string[], alt: string }) {
+
+    const recurse = (s: string | string[]) => {
+        if (Array.isArray(s)) {
+            if (s.length > 1) {
+                return (<>
+                    <object data={s[0]} type="image/*" aria-label={alt}>
+                        {recurse(s.slice(1))}
+                    </object>
+                    </>);
+            }
+            else if (s.length === 1) {
+                return (<img src={s[0]} alt={alt} />);
+            }
+            else {
+                return (<></>);
+            }
+        }
+        else {
+            return (<img src={s as string} alt={alt} />);
+        }
+    }
+
+    return recurse(src);
+}
+
+
 export type TeamBrochurePhotoProps = {
     smes: SME[];
     team_photo_names: string | string[] | string[][];
-    team_photo_url: string; // URL to image.
+    team_photo_url: string | string[]; // Supports alternate URLs as fallbacks.
 }
 export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
     return (
         <div className="team-figure">
             <figure>
-                <img src={props.team_photo_url} alt="Team Photo" />
+                <DefaultImage src={props.team_photo_url} alt="Team Photo" />
                 <figcaption className="text-[#76777A] text-md font-normal">
                     <p>{props.team_photo_names}</p>
                     <p>{`SME: ${props.smes.map(sme => `${sme.title} ${sme.firstName} ${sme.lastName}`).join(', ')}`}</p>
@@ -64,7 +92,7 @@ export function TeamMembers( props: { team_members: TeamMember[] } ) {
     return (<>
         {props.team_members.map((tm, index) => {
             return (
-                <div key={index}>
+                <div key={`tm-${index}`}>
                     <TeamMemberInfo {...tm} />
                 </div>
             );
@@ -92,7 +120,7 @@ export default function TeamBrochure( props: Team ) {
             {/* Project info */}
             <div className="grid grid-cols-5 gap-4">
                 <div className="col-span-2">
-                    <TeamBrochurePhoto smes={props.smes} team_photo_names={props.teamPhotoNames} team_photo_url={props.imageUrl}/>
+                    <TeamBrochurePhoto smes={props.smes} team_photo_names={props.teamPhotoNames} team_photo_url={props.teamPhotoUrl}/>
                 </div>
                 <div className="col-span-3 text-left">
                     <TeamChallenge project_summary={props.projectSummary} />
