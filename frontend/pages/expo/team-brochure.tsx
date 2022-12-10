@@ -786,7 +786,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                                                         </svg>
-                                                        <p>ERROR: {JSON.stringify(teams.get(folder.id!)?.status.error)}</p>
+                                                        <p>Error (select Preview for details)</p>
                                                     </div>
                                                 </>);
                                             }
@@ -794,24 +794,61 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                         </td>
                                         <td>
                                             <div className='flex flex-row space-x-4'>
-                                                <a className='flex flex-row' href='#' onClick={() => {
+                                                <a className='flex flex-row group relative' href='#' onClick={() => {
                                                     dispatch({ type: 'update-state', state: {
                                                         selectedTeamToDisplay: folder.id!,
                                                     }});
                                                 }}>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                                                         <path d="M11.625 16.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75z" />
                                                         <path fillRule="evenodd" d="M5.625 1.5H9a3.75 3.75 0 013.75 3.75v1.875c0 1.036.84 1.875 1.875 1.875H16.5a3.75 3.75 0 013.75 3.75v7.875c0 1.035-.84 1.875-1.875 1.875H5.625a1.875 1.875 0 01-1.875-1.875V3.375c0-1.036.84-1.875 1.875-1.875zm6 16.5c.66 0 1.277-.19 1.797-.518l1.048 1.048a.75.75 0 001.06-1.06l-1.047-1.048A3.375 3.375 0 1011.625 18z" clipRule="evenodd" />
                                                         <path d="M14.25 5.25a5.23 5.23 0 00-1.279-3.434 9.768 9.768 0 016.963 6.963A5.23 5.23 0 0016.5 7.5h-1.875a.375.375 0 01-.375-.375V5.25z" />
                                                     </svg>
-                                                    Preview
+                                                    {/* Preview */}
+                                                    <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-36 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
+                                                        Open Page Preview
+                                                    </span>
                                                 </a>
-                                                <a className='flex flex-row' href={`https://drive.google.com/drive/u/1/folders/${folder.id}`} target="_blank" rel="noopener noreferrer">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-1">
+                                                <a className='flex flex-row group relative' href={`https://drive.google.com/drive/u/1/folders/${folder.id}`} target="_blank" rel="noopener noreferrer">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                                                         <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
                                                     </svg>
-                                                    Open In Google Drive
+                                                    {/* Open */}
+                                                    <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-36 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
+                                                        Link to Google Drive Folder
+                                                    </span>
                                                 </a>
+                                                <div className='group relative'>
+                                                    <button className='flex flex-row disabled:text-slate-400 enabled:hover:text-blue-600' onClick={() => {
+                                                        const pt = teams.get(folder.id!);
+                                                        if (pt?.status.ok !== undefined) {
+                                                            uploadTeamToGoogleDrive(pt?.team!, folder);
+                                                        }
+                                                    }} disabled={teams.get(folder.id!)?.status.ok === undefined}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                                        </svg>
+                                                        <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-36 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
+                                                            Upload to Google Drive
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                                <div className='group relative'>
+                                                    <button className='flex flex-row disabled:text-slate-400 enabled:hover:text-blue-600' onClick={() => {
+                                                        const pt = teams.get(folder.id!);
+                                                        if (pt?.status.ok !== undefined) {
+                                                            downloadTeamAsHTML(pt?.team!);
+                                                        }
+                                                    }} disabled={teams.get(folder.id!)?.status.ok === undefined}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                        </svg>
+                                                        <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-24 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
+                                                            Download as HTML
+                                                        </span>
+                                                    </button>
+                                                </div>
+
                                             </div>
                                         </td>
                                     </tr>
@@ -825,17 +862,17 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
                 {/* Area to show list of teams selected. */}
                 <div>
-                {teams.size > 0 ? (<>
+                {(teams.size > 0) && (!fetching) ? (<>
                     <div className="flex flex-col items-center justify-center">
                         <div className='mb-4'>How would you like to use the team brochure pages?</div>
                         <div className="flex flex-row space-x-3">
-                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
+                            <button className="bg-green-500 hover:bg-green-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
                                 Upload all to Google Drive
                             </button>
-                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
+                            <button className="bg-purple-500 hover:bg-purple-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                 </svg>
