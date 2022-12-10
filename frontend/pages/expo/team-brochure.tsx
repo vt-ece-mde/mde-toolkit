@@ -424,42 +424,11 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
 
     useEffect(() => {
-        // const run = async (folders: drive_v3.Schema$File[]) => {
-
-        //     dispatch({ type: 'update-state', state: {
-        //         fetching: true,
-        //         parentId: '',
-        //         teams: new Map<string, ParsedTeam>(),
-        //         selectedTeamToDisplay: '',
-        //     }});
-
-        //     // Get ID of parent folder to make subsequent Drive picker calls easier.
-        //     var p;
-        //     if (folders[0].id) {
-        //         p = await driveGetFolderParent(folders[0].id);
-        //         dispatch({ type: 'update-state', state: {
-        //             parentId: p,
-        //         }});
-        //     }
-
-        //     // Async parse team folders.
-        //     // For each folder, add the parsed team to the state.
-        //     folders.map(async (folder) => {
-        //         const { team, status } = await parseTeamFolder(folder);
-        //         dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
-        //     })
-
-        //     dispatch({ type: 'update-state', state: {
-        //         fetching: false,
-        //     }});
-        // }
-
         // Only run if the picked file exists and has an ID parameter.
         if (pickedFolders.length > 0) {
-            // run(pickedFolders);
             runParsingAlgorithm(pickedFolders);
         }
-    }, [pickedFolders]);
+    }, [pickedFolders, runParsingAlgorithm]);
 
 
 
