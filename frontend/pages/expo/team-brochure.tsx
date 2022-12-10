@@ -345,17 +345,13 @@ const defaultState: State = {
     fetching: false,
     parentId: '',
     pickedFolders: [],
-    // teams: [],
     teams: new Map<string, ParsedTeam>(),
     selectedTeamToDisplay: '', // Empty for undefined, teams key string for defined.
-    // teams_parsing_status: new Map<string, any>(),
-    // teams: { id: string, },
 }
 
 type Action =
     | { type: 'set-state', state: State } // Override state.
     | { type: 'update-state', state: Partial<State> } // Update provided properties in state.
-    // | { type: 'set-team', id: string, team?: Team, status?: any } // Update provided properties in state.
     | { type: 'set-team', id: string, pt: ParsedTeam } // Update provided properties in state.
 
 export default function TeamBrochurePage({ session }: { session: Session }) {
@@ -375,8 +371,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                 return {
                     ...state,
                     teams: state.teams.set(action.id, action.pt),
-                    // teams: state.teams.set(action.id, action.team),
-                    // teams_parsing_status: state.teams_parsing_status.set(action.id, action.status),
                 };
             default:
                 return defaultState;
@@ -395,13 +389,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     const refresh_token = session?.refresh_token;
 
     const [openPicker, authResponse] = useDrivePicker();
-
-    // console.log(`ACCESS TOKEN: ${JSON.stringify(access_token)}`)
-
-
-
-    // const [pickedFile, setPickedFile] = useState<drive_v3.Schema$File>();
-
 
     useEffect(() => {
         const run = async (folders: drive_v3.Schema$File[]) => {
@@ -424,40 +411,14 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             folders.map(async (folder) => {
                 const { team, status } = await parseTeamFolder(folder);
                 dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
-                // // Add team to state if the team is defined.
-                // if (team !== undefined) {
-                //     dispatch({ type: 'set-team', id: folder.id!, team: team });
-                // }
             })
-
-            // const teams: Team[] = (await Promise.all<Team|undefined>(folders.map(parseTeamFolder))).filter(r => r !== undefined) as Team[];
-
-            // console.log(`teams? ${JSON.stringify(teams)}`)
 
             dispatch({ type: 'update-state', state: {
                 fetching: false,
-                // teams: teams,
-                // parentId: p,
             }});
-
-            // // Set the fetching state.
-            // dispatch({ type: 'set-fetching', fetching: true });
-
-            // // Get folder and parent content.
-            // const l = await driveGetFolderChildren(id);
-
-            // // Set folder and parent content and reset the fetching state.
-            // dispatch({ type: 'picker-complete', 
-            //     fetching: false,
-            //     fileList: l,
-            //     parentId: p,
-            // });
         }
 
         // Only run if the picked file exists and has an ID parameter.
-        // if (pickedFile && pickedFile.id) {
-        //     run(pickedFile.id);
-        // }
         if (pickedFolders.length > 0) {
             run(pickedFolders);
         }
@@ -510,9 +471,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     }
 
     const downloadTeamListAsHTML = async (teams: Team[]) => {
-        // teams.forEach((team, key) => {
-        //     downloadTeamAsHTML(team);
-        // });
         for (let index = 0; index < teams.length; index++) {
             const team = teams[index];
             downloadTeamAsHTML(team);
@@ -532,7 +490,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         // Create file blob to upload.
         const file = new Blob([html], {type: 'text/html'});
         const name = `${team.projectTitle}.html`; // This is what the file will be named in Drive.
-        // const parents = ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C']; // This is the parent folder.
         const parents = [root.id!]; // This is the parent folder.
 
         // First, check if the file exists (using name as the identifier) at the given root directory.
@@ -617,19 +574,10 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             console.log('User clicked cancel/close button')
         } 
         else if (data.action === 'picked') {
-            // console.log(`data? ${JSON.stringify(data)}`)
-            console.log(`picked? ${JSON.stringify(data)}`)
-
-            // dispatch({ type: 'set-pickedFolders', pickedFolders: data.docs });
+            console.log(`picked? ${JSON.stringify(data)}`);
             dispatch({ type: 'update-state', state: {
                 pickedFolders: data.docs,
             }});
-
-            // if (data.docs[0].mimeType === "application/vnd.google-apps.folder") {
-
-            //     // Set the current picked file; lets the React hooks take care of the rest.
-            //     dispatch({ type: 'set-pickedFile', pickedFile: data.docs[0] });
-            // }
         }
         else if (data.action === 'loaded') {}
     }
@@ -694,11 +642,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                 {pickedFolders.map(folder => <>
                                     <tr className='odd:bg-white even:bg-slate-100'>
                                         <td>
-                                            {/* <a href='#' onClick={() => {
-                                                dispatch({ type: 'update-state', state: {
-                                                    selectedTeamToDisplay: folder.id!,
-                                                }});
-                                            }}>{JSON.stringify(folder.name)}</a> */}
                                             <p>{folder.name}</p>
                                         </td>
                                         <td>
@@ -736,7 +679,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                 </>);
                                             }
                                             else if (teams.get(folder.id!)?.status.error !== undefined) {
-                                                // return (<p>ERROR: {JSON.stringify(teams.get(folder.id!)?.status.error)}</p>);
                                                 return (<>
                                                     <div className='flex flex-row'>
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
@@ -939,7 +881,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     return {
         props: { 
             session,
-            // drive,
         },
     }
 }
