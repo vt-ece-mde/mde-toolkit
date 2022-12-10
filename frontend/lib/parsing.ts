@@ -69,12 +69,13 @@ export interface Team
     sponsors: Sponsor[];
     smes: SME[];
     projectSummary: string;
-    teamPhotoNames: string | string[] | string[][];
-    imageUrl: string;
-    videoUrl: string;
-    presentationUrl: string;
-    posterUrl: string;
+    teamPhotoNames: string | string[] | string[][]; // Supports string, array for multi-line strings, and 2D array as CSV input.
+    teamPhotoUrl: string | string[]; // Supports alternate URLs as fallbacks.
+    videoUrl: string | string[]; // Supports alternate URLs as fallbacks.
+    presentationUrl: string | string[]; // Supports alternate URLs as fallbacks.
+    posterUrl: string | string[]; // Supports alternate URLs as fallbacks.
     projectTitle: string;
+    teamShortName: string; // This is a short-hand name used for the team (should not contain spaces or special characters).
 }
 
 /**
@@ -306,9 +307,9 @@ const recursiveStringTrim = (sar: string | string[] | string[][]): string | stri
 }
 
 
-export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
-    smeNamesArr: string[][], projectSummaryStr: string, imageLocationStr: string,
-    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string, teamPhotoNames: string | string[] | string[][]) : Team {
+export function buildTeamsFromCSVStrings(teamShortName: string, teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
+    smeNamesArr: string[][], projectSummaryStr: string, teamPhotoUrl: string | string[],
+    teamVideoURL: string | string[], teamPowerPointURL: string | string[], teamPosterURL: string | string[], teamPhotoNames: string | string[] | string[][]) : Team {
 
     // Parse team names
     const teamMembers: TeamMember[] = parseTeamNames(teamNamesArr);
@@ -320,12 +321,13 @@ export function buildTeamsFromCSVStrings(teamProjectTitle: string, teamNamesArr:
     const smes: SME[] = parseSMENames(smeNamesArr);
 
     // Build the team interface
-    var team = {} as Team
+    var team = {} as Team;
+    team.teamShortName = teamShortName;
     team.teamMembers = teamMembers;
     team.sponsors = sponsors;
     team.smes = smes;
     team.projectSummary = recursiveStringTrim(projectSummaryStr) as string;
-    team.imageUrl = imageLocationStr;
+    team.teamPhotoUrl = teamPhotoUrl;
     team.videoUrl = teamVideoURL;
     team.presentationUrl = teamPowerPointURL;
     team.posterUrl = teamPosterURL;
