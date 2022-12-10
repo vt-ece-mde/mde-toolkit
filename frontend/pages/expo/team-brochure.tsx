@@ -3,7 +3,7 @@ import { GetServerSidePropsContext } from 'next';
 import { drive_v3 } from "googleapis";
 
 import { renderToStaticMarkup } from 'react-dom/server';
-import  { useEffect, useState, useReducer } from 'react';
+import  { useEffect, useState, useReducer, useCallback } from 'react';
 import { PickerCallback } from 'react-google-drive-picker/dist/typeDefs';
 import useDrivePicker from '../../components/googledrivepicker';
 import { Session } from 'next-auth';
@@ -390,40 +390,74 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
     const [openPicker, authResponse] = useDrivePicker();
 
-    useEffect(() => {
-        const run = async (folders: drive_v3.Schema$File[]) => {
 
+
+    const runParsingAlgorithm = useCallback(async (folders: drive_v3.Schema$File[]) => {
+
+        dispatch({ type: 'update-state', state: {
+            fetching: true,
+            parentId: '',
+            teams: new Map<string, ParsedTeam>(),
+            selectedTeamToDisplay: '',
+        }});
+
+        // Get ID of parent folder to make subsequent Drive picker calls easier.
+        var p;
+        if (folders[0].id) {
+            p = await driveGetFolderParent(folders[0].id);
             dispatch({ type: 'update-state', state: {
-                fetching: true,
-                parentId: '',
-                teams: new Map<string, ParsedTeam>(),
-                selectedTeamToDisplay: '',
-            }});
-
-            // Get ID of parent folder to make subsequent Drive picker calls easier.
-            var p;
-            if (folders[0].id) {
-                p = await driveGetFolderParent(folders[0].id);
-                dispatch({ type: 'update-state', state: {
-                    parentId: p,
-                }});
-            }
-
-            // Async parse team folders.
-            // For each folder, add the parsed team to the state.
-            folders.map(async (folder) => {
-                const { team, status } = await parseTeamFolder(folder);
-                dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
-            })
-
-            dispatch({ type: 'update-state', state: {
-                fetching: false,
+                parentId: p,
             }});
         }
 
+        // Async parse team folders.
+        // For each folder, add the parsed team to the state.
+        folders.map(async (folder) => {
+            const { team, status } = await parseTeamFolder(folder);
+            dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
+        })
+
+        dispatch({ type: 'update-state', state: {
+            fetching: false,
+        }});
+    }, [pickedFolders])
+
+
+    useEffect(() => {
+        // const run = async (folders: drive_v3.Schema$File[]) => {
+
+        //     dispatch({ type: 'update-state', state: {
+        //         fetching: true,
+        //         parentId: '',
+        //         teams: new Map<string, ParsedTeam>(),
+        //         selectedTeamToDisplay: '',
+        //     }});
+
+        //     // Get ID of parent folder to make subsequent Drive picker calls easier.
+        //     var p;
+        //     if (folders[0].id) {
+        //         p = await driveGetFolderParent(folders[0].id);
+        //         dispatch({ type: 'update-state', state: {
+        //             parentId: p,
+        //         }});
+        //     }
+
+        //     // Async parse team folders.
+        //     // For each folder, add the parsed team to the state.
+        //     folders.map(async (folder) => {
+        //         const { team, status } = await parseTeamFolder(folder);
+        //         dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
+        //     })
+
+        //     dispatch({ type: 'update-state', state: {
+        //         fetching: false,
+        //     }});
+        // }
+
         // Only run if the picked file exists and has an ID parameter.
         if (pickedFolders.length > 0) {
-            run(pickedFolders);
+            // run(pickedFolders);
+            runParsingAlgorithm(pickedFolders);
         }
     }, [pickedFolders]);
 
@@ -602,7 +636,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         })
     }
 
-    
+
     return (<>
         <div className='flex flex-col items-center justify-center pt-4'>
 
@@ -767,6 +801,16 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                     <div className="flex flex-col items-center justify-center">
                         <div className='mb-4'>How would you like to use the team brochure pages?</div>
                         <div className="flex flex-row space-x-3">
+                            <button className="bg-yellow-500 hover:bg-yellow-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => {
+                                    if (pickedFolders.length > 0) {
+                                        runParsingAlgorithm(pickedFolders)
+                                    }
+                                } } disabled={fetching || pickedFolders.length === 0}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
+                                    </svg>
+                                    Parse Again
+                            </button>
                             <button className="bg-green-500 hover:bg-green-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => {
                                 Array.from(teams.entries()).forEach(([id, pt], index) => {
                                     const {team, root, status} = pt;
