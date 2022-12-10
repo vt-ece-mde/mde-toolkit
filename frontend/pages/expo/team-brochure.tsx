@@ -78,32 +78,216 @@ async function driveUpdateFile(params: {
     }
 }
 
-// export async function driveUploadFileMultipart(token: string, file: Blob, metadata: any, method: string = 'POST', params: any = {}): Promise<any> {
+const driveGetFolderChildren = async (id: string, type: 'all'|'files'|'folders' = 'all'): Promise<drive_v3.Schema$File[]> => {
 
-//     const form = new FormData();
-//     form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-//     form.append('file', file);
+    // Get all children in selected folder.
+    const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
+        type: type,
+        // type: 'all', // 'all'|'files'|'folders'
+        // type: 'files', // 'all'|'files'|'folders'
+    }))
+    const j = await res.json()
+    console.log(`GOT RES: ${JSON.stringify(j)}`)
 
-//     const url = `https://www.googleapis.com/upload/drive/v3/files?` + new URLSearchParams({
-//         uploadType: 'multipart',
-//         supportsAllDrives: 'true',
-//         ...params,
-//     });
+    // Return list of children.
+    return j;
+}
 
-//     try {
-//         const res = await fetch(url, {
-//             method: method,
-//             body: form,
-//             headers: {
-//                 'Authorization': `Bearer ${token}`,
-//             },
-//         });
-//         const json = await res.json();
-//         return json;
-//     } catch (error) {
-//         return error
-//     }
-// }
+const driveGetFolderParent = async (id: string): Promise<string> => {
+    // Get parent folder for easy access next time.
+    const res = await fetch(`/api/google/drive/get?`+ new URLSearchParams({
+        fileId: id,
+        fields: "parents",
+        supportsAllDrives: 'true',
+    }))
+    const j = await res.json()
+    console.log(`GOT res: ${JSON.stringify(j)}`)
+    if (j.error === undefined ) {
+        return j.parents[0];
+    } else {
+        return '';
+    }
+}
+
+const parseDriveFile = async (id: string, mimeType: string): Promise<string|string[][]> => {
+    const res = await fetch(`/api/google/drive/parse/${id}?`+ new URLSearchParams({
+        mimeType: mimeType,
+    }))
+    const j = await res.json()
+    return j;
+}
+
+
+const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<{ team?: Team, status: any }> => {
+    if (folder.id) {
+        const files = await driveGetFolderChildren(folder.id);
+
+        interface TeamFiles {
+            // teamTitle?: drive_v3.Schema$File;
+            teamPhoto?: drive_v3.Schema$File;
+            teamPhotoNames?: drive_v3.Schema$File;
+            teamNames?: drive_v3.Schema$File;
+            teamSponsorNames?: drive_v3.Schema$File;
+            teamSMENames?: drive_v3.Schema$File;
+            teamPresentation?: drive_v3.Schema$File;
+            teamPoster?: drive_v3.Schema$File;
+            teamProjectSummary?: drive_v3.Schema$File;
+        }
+        var teamFiles: TeamFiles = {}
+
+        for (let index = 0; index < files.length; index++) {
+            const file = files[index];
+            const name = file.name?.toLowerCase();
+
+            if (name?.includes('team_photo_names')) {
+                teamFiles.teamPhotoNames = file;
+            }
+            else if (name?.includes('team_photo')) {
+                teamFiles.teamPhoto = file;
+            }
+            else if (name?.includes('team_names')) {
+                teamFiles.teamNames = file;
+            }
+            else if (name?.includes('sponsor_names')) {
+                teamFiles.teamSponsorNames = file;
+            }
+            else if (name?.includes('sme_names')) {
+                teamFiles.teamSMENames = file;
+            }
+            else if (name?.includes('presentation')) {
+                teamFiles.teamPresentation = file;
+            }
+            else if (name?.includes('poster')) {
+                teamFiles.teamPoster = file;
+            }
+            else if (name?.includes('project_summary')) {
+                teamFiles.teamProjectSummary = file;
+            }
+        }
+
+        interface ParsedTeamContent {
+            teamTitle?: string;
+            teamPhoto?: string; // URL string.
+            teamPhotoNames?: string;
+            teamNames?: string[][];
+            teamSponsorNames?: string[][];
+            teamSMENames?: string[][];
+            teamPresentation?: string; // URL string.
+            teamPoster?: string; // URL string.
+            teamProjectSummary?: string;
+        }
+        var parsedTeamContent: ParsedTeamContent = {};
+
+        // Ensure that all team files have been set.
+        // If any are missing then the team is invalid.
+        // const validTeam = Object.values(teamFiles).every(f => f !== undefined && f.id !== undefined);
+        console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
+        const validTeam = (teamFiles.teamPhoto !== undefined)
+            && (teamFiles.teamPhotoNames !== undefined)
+            && (teamFiles.teamNames !== undefined)
+            && (teamFiles.teamSponsorNames !== undefined)
+            && (teamFiles.teamSMENames !== undefined)
+            && (teamFiles.teamPresentation !== undefined)
+            && (teamFiles.teamPoster !== undefined)
+            && (teamFiles.teamProjectSummary !== undefined);
+        if (validTeam) {
+            console.log(`team is valid: ${folder.name}`)
+            
+            // Team names.
+            // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+            // }
+
+            // Team names.
+            // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
+            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+            // }
+
+            // Team sponsor names.
+            // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
+            parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
+            // }
+            
+            // Team SME names.
+            // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
+            parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
+            // }
+
+            // Team photo names text.
+            parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
+
+            // Project summary text.
+            parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
+
+
+            // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
+            
+            // Build URLs to images and other shareable content.
+            parsedTeamContent.teamPhoto = teamFiles.teamPhoto?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                export: 'view',
+                id: teamFiles.teamPhoto?.id,
+            }) : '';
+            parsedTeamContent.teamPresentation = teamFiles.teamPresentation?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                export: 'view',
+                id: teamFiles.teamPresentation?.id,
+            }) : '';
+            parsedTeamContent.teamPoster = teamFiles.teamPoster?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+                export: 'view',
+                id: teamFiles.teamPoster?.id,
+            }) : '';
+
+            // return parsedTeamContent;
+
+            parsedTeamContent.teamTitle = folder.name!;
+
+            console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
+
+            const team: Team = buildTeamsFromCSVStrings(
+                parsedTeamContent.teamTitle!,
+                parsedTeamContent.teamNames!,
+                parsedTeamContent.teamSponsorNames!,
+                parsedTeamContent.teamSMENames!,
+                parsedTeamContent.teamProjectSummary!,
+                parsedTeamContent.teamPhoto!,
+                '', // team video
+                parsedTeamContent.teamPresentation!,
+                parsedTeamContent.teamPoster!,
+                parsedTeamContent.teamPhotoNames!,
+            )
+
+            return {
+                team: team,
+                status: {
+                    ok: true,
+                },
+            };
+
+        }
+        else {
+            console.log(`team is NOT valid: ${folder.name}`)
+            var message = 'team is not valid';
+            message += (teamFiles.teamPhoto === undefined) ? '\n- missing teamPhoto' : '';
+            message += (teamFiles.teamPhotoNames === undefined) ? '\n- missing teamPhotoNames' : '';
+            message += (teamFiles.teamNames === undefined) ? '\n- missing teamNames' : '';
+            message += (teamFiles.teamSponsorNames === undefined) ? '\n- missing teamSponsorNames' : '';
+            message += (teamFiles.teamSMENames === undefined) ? '\n- missing teamSMENames' : '';
+            message += (teamFiles.teamPresentation === undefined) ? '\n- missing teamPresentation' : '';
+            message += (teamFiles.teamPoster === undefined) ? '\n- missing teamPoster' : '';
+            message += (teamFiles.teamProjectSummary === undefined) ? '\n- missing teamProjectSummary' : '';
+            return {
+                status: {
+                    error: message,
+                },
+            };
+        }
+    }
+    return {
+        status: {
+            error: 'undefined folder ID',
+        },
+    };
+}
+
 
 const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> => {
     const url = '/api/google/drive/files/list?' + new URLSearchParams({
@@ -199,206 +383,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
 
     useEffect(() => {
-        const getFolderChildren = async (id: string): Promise<drive_v3.Schema$File[]> => {
-
-            // Get all children in selected folder.
-            const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
-                // type: 'all', // 'all'|'files'|'folders'
-                type: 'files', // 'all'|'files'|'folders'
-            }))
-            const j = await res.json()
-            console.log(`GOT RES: ${JSON.stringify(j)}`)
-    
-            // Return list of children.
-            return j;
-        }
-
-        const getFolderParent = async (id: string): Promise<string> => {
-            // Get parent folder for easy access next time.
-            const res = await fetch(`/api/google/drive/get?`+ new URLSearchParams({
-                fileId: id,
-                fields: "parents",
-                supportsAllDrives: 'true',
-            }))
-            const j = await res.json()
-            console.log(`GOT res: ${JSON.stringify(j)}`)
-            if (j.error === undefined ) {
-                return j.parents[0];
-            } else {
-                return '';
-            }
-        }
-
-        const parseDriveFile = async (id: string, mimeType: string): Promise<string|string[][]> => {
-            const res = await fetch(`/api/google/drive/parse/${id}?`+ new URLSearchParams({
-                mimeType: mimeType,
-            }))
-            const j = await res.json()
-            return j;
-        }
-
-        const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<{ team?: Team, status: any }> => {
-            if (folder.id) {
-                const files = await getFolderChildren(folder.id);
-
-                interface TeamFiles {
-                    // teamTitle?: drive_v3.Schema$File;
-                    teamPhoto?: drive_v3.Schema$File;
-                    teamPhotoNames?: drive_v3.Schema$File;
-                    teamNames?: drive_v3.Schema$File;
-                    teamSponsorNames?: drive_v3.Schema$File;
-                    teamSMENames?: drive_v3.Schema$File;
-                    teamPresentation?: drive_v3.Schema$File;
-                    teamPoster?: drive_v3.Schema$File;
-                    teamProjectSummary?: drive_v3.Schema$File;
-                }
-                var teamFiles: TeamFiles = {}
-
-                for (let index = 0; index < files.length; index++) {
-                    const file = files[index];
-                    const name = file.name?.toLowerCase();
-
-                    if (name?.includes('team_photo_names')) {
-                        teamFiles.teamPhotoNames = file;
-                    }
-                    else if (name?.includes('team_photo')) {
-                        teamFiles.teamPhoto = file;
-                    }
-                    else if (name?.includes('team_names')) {
-                        teamFiles.teamNames = file;
-                    }
-                    else if (name?.includes('sponsor_names')) {
-                        teamFiles.teamSponsorNames = file;
-                    }
-                    else if (name?.includes('sme_names')) {
-                        teamFiles.teamSMENames = file;
-                    }
-                    else if (name?.includes('presentation')) {
-                        teamFiles.teamPresentation = file;
-                    }
-                    else if (name?.includes('poster')) {
-                        teamFiles.teamPoster = file;
-                    }
-                    else if (name?.includes('project_summary')) {
-                        teamFiles.teamProjectSummary = file;
-                    }
-                }
-
-                interface ParsedTeamContent {
-                    teamTitle?: string;
-                    teamPhoto?: string; // URL string.
-                    teamPhotoNames?: string;
-                    teamNames?: string[][];
-                    teamSponsorNames?: string[][];
-                    teamSMENames?: string[][];
-                    teamPresentation?: string; // URL string.
-                    teamPoster?: string; // URL string.
-                    teamProjectSummary?: string;
-                }
-                var parsedTeamContent: ParsedTeamContent = {};
-
-                // Ensure that all team files have been set.
-                // If any are missing then the team is invalid.
-                // const validTeam = Object.values(teamFiles).every(f => f !== undefined && f.id !== undefined);
-                console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
-                const validTeam = (teamFiles.teamPhoto !== undefined)
-                    && (teamFiles.teamPhotoNames !== undefined)
-                    && (teamFiles.teamNames !== undefined)
-                    && (teamFiles.teamSponsorNames !== undefined)
-                    && (teamFiles.teamSMENames !== undefined)
-                    && (teamFiles.teamPresentation !== undefined)
-                    && (teamFiles.teamPoster !== undefined)
-                    && (teamFiles.teamProjectSummary !== undefined);
-                if (validTeam) {
-                    console.log(`team is valid: ${folder.name}`)
-                    
-                    // Team names.
-                    // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-                    parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
-                    // }
-
-                    // Team names.
-                    // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-                    parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
-                    // }
-
-                    // Team sponsor names.
-                    // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
-                    parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
-                    // }
-                    
-                    // Team SME names.
-                    // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
-                    parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
-                    // }
-
-                    // Team photo names text.
-                    parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
-
-                    // Project summary text.
-                    parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
-
-
-                    // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
-                    
-                    // Build URLs to images and other shareable content.
-                    parsedTeamContent.teamPhoto = teamFiles.teamPhoto?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPhoto?.id,
-                    }) : '';
-                    parsedTeamContent.teamPresentation = teamFiles.teamPresentation?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPresentation?.id,
-                    }) : '';
-                    parsedTeamContent.teamPoster = teamFiles.teamPoster?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPoster?.id,
-                    }) : '';
-
-                    // return parsedTeamContent;
-
-                    parsedTeamContent.teamTitle = folder.name!;
-
-                    console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
-
-                    const team: Team = buildTeamsFromCSVStrings(
-                        parsedTeamContent.teamTitle!,
-                        parsedTeamContent.teamNames!,
-                        parsedTeamContent.teamSponsorNames!,
-                        parsedTeamContent.teamSMENames!,
-                        parsedTeamContent.teamProjectSummary!,
-                        parsedTeamContent.teamPhoto!,
-                        '', // team video
-                        parsedTeamContent.teamPresentation!,
-                        parsedTeamContent.teamPoster!,
-                        parsedTeamContent.teamPhotoNames!,
-                    )
-
-                    return {
-                        team: team,
-                        status: {
-                            ok: true,
-                        },
-                    };
-
-                }
-                else {
-                    console.log(`team is NOT valid: ${folder.name}`)
-                    return {
-                        status: {
-                            error: 'team is not valid',
-                        },
-                    };
-                }
-            }
-            return {
-                status: {
-                    error: 'undefined folder ID',
-                },
-            };
-        }
-
-
         const run = async (folders: drive_v3.Schema$File[]) => {
 
             dispatch({ type: 'update-state', state: {
@@ -408,7 +392,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             // Get ID of parent folder to make subsequent Drive picker calls easier.
             var p;
             if (folders[0].id) {
-                p = await getFolderParent(folders[0].id);
+                p = await driveGetFolderParent(folders[0].id);
                 dispatch({ type: 'update-state', state: {
                     parentId: p,
                 }});
@@ -439,7 +423,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             // dispatch({ type: 'set-fetching', fetching: true });
 
             // // Get folder and parent content.
-            // const l = await getFolderChildren(id);
+            // const l = await driveGetFolderChildren(id);
 
             // // Set folder and parent content and reset the fetching state.
             // dispatch({ type: 'picker-complete', 
@@ -877,6 +861,21 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 }
 
 
+/**
+ * Simple component to display a paragraph element with text that possible contains newlines ('\n').
+ * Inspired by: https://stackoverflow.com/a/73056801
+ */
+function MultilineParagraph(props: { text: string }) {
+    return (<>
+    <p>{props.text.split(/\n|\r\n/).map((segment: string, index: number) => (
+        <>
+            {index > 0 && <br />}
+            {segment}
+        </>
+    ))}</p>
+    </>);
+}
+
 
 function TeamDisplayArea(props: { parentFolder?: drive_v3.Schema$File, pt?: ParsedTeam }) {
     if (props.pt?.status.ok !== undefined) {
@@ -905,7 +904,7 @@ function TeamDisplayArea(props: { parentFolder?: drive_v3.Schema$File, pt?: Pars
                 </div>
                 <div className='flex flex-column'>
                     <p className='text-lg font-bold'>Errors:</p>
-                    <p>{props.pt?.status.error}</p>
+                    <MultilineParagraph text={props.pt?.status.error}/>
                 </div>
             </div>
         </>);
