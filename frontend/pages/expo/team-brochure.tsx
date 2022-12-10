@@ -124,14 +124,14 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
 
         interface TeamFiles {
             // teamTitle?: drive_v3.Schema$File;
-            teamPhoto?: drive_v3.Schema$File;
-            teamPhotoNames?: drive_v3.Schema$File;
-            teamNames?: drive_v3.Schema$File;
-            teamSponsorNames?: drive_v3.Schema$File;
-            teamSMENames?: drive_v3.Schema$File;
-            teamPresentation?: drive_v3.Schema$File;
-            teamPoster?: drive_v3.Schema$File;
-            teamProjectSummary?: drive_v3.Schema$File;
+            teamPhoto?: drive_v3.Schema$File[];
+            teamPhotoNames?: drive_v3.Schema$File[];
+            teamNames?: drive_v3.Schema$File[];
+            teamSponsorNames?: drive_v3.Schema$File[];
+            teamSMENames?: drive_v3.Schema$File[];
+            teamPresentation?: drive_v3.Schema$File[];
+            teamPoster?: drive_v3.Schema$File[];
+            teamProjectSummary?: drive_v3.Schema$File[];
         }
         var teamFiles: TeamFiles = {}
 
@@ -140,28 +140,36 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             const name = file.name?.toLowerCase();
 
             if (name?.includes('team_photo_names')) {
-                teamFiles.teamPhotoNames = file;
+                if (teamFiles.teamPhotoNames === undefined) teamFiles.teamPhotoNames = []; // Add new list entry.
+                teamFiles.teamPhotoNames?.push(file);
             }
             else if (name?.includes('team_photo')) {
-                teamFiles.teamPhoto = file;
+                if (teamFiles.teamPhoto === undefined) teamFiles.teamPhoto = []; // Add new list entry.
+                teamFiles.teamPhoto?.push(file);
             }
             else if (name?.includes('team_names')) {
-                teamFiles.teamNames = file;
+                if (teamFiles.teamNames === undefined) teamFiles.teamNames = []; // Add new list entry.
+                teamFiles.teamNames?.push(file);
             }
             else if (name?.includes('sponsor_names')) {
-                teamFiles.teamSponsorNames = file;
+                if (teamFiles.teamSponsorNames === undefined) teamFiles.teamSponsorNames = []; // Add new list entry.
+                teamFiles.teamSponsorNames?.push(file);
             }
             else if (name?.includes('sme_names')) {
-                teamFiles.teamSMENames = file;
+                if (teamFiles.teamSMENames === undefined) teamFiles.teamSMENames = []; // Add new list entry.
+                teamFiles.teamSMENames?.push(file);
             }
             else if (name?.includes('presentation')) {
-                teamFiles.teamPresentation = file;
+                if (teamFiles.teamPresentation === undefined) teamFiles.teamPresentation = []; // Add new list entry.
+                teamFiles.teamPresentation?.push(file);
             }
             else if (name?.includes('poster')) {
-                teamFiles.teamPoster = file;
+                if (teamFiles.teamPoster === undefined) teamFiles.teamPoster = []; // Add new list entry.
+                teamFiles.teamPoster?.push(file);
             }
             else if (name?.includes('project_summary')) {
-                teamFiles.teamProjectSummary = file;
+                if (teamFiles.teamProjectSummary === undefined) teamFiles.teamProjectSummary = []; // Add new list entry.
+                teamFiles.teamProjectSummary?.push(file);
             }
         }
 
@@ -183,57 +191,65 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
         // const validTeam = Object.values(teamFiles).every(f => f !== undefined && f.id !== undefined);
         console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
         const validTeam = (teamFiles.teamPhoto !== undefined)
+            && (teamFiles.teamPhoto.length === 1)
             && (teamFiles.teamPhotoNames !== undefined)
+            && (teamFiles.teamPhotoNames.length === 1)
             && (teamFiles.teamNames !== undefined)
+            && (teamFiles.teamNames.length === 1)
             && (teamFiles.teamSponsorNames !== undefined)
+            && (teamFiles.teamSponsorNames.length === 1)
             && (teamFiles.teamSMENames !== undefined)
+            && (teamFiles.teamSMENames.length === 1)
             && (teamFiles.teamPresentation !== undefined)
+            && (teamFiles.teamPresentation.length === 1)
             && (teamFiles.teamPoster !== undefined)
-            && (teamFiles.teamProjectSummary !== undefined);
+            && (teamFiles.teamPoster.length === 1)
+            && (teamFiles.teamProjectSummary !== undefined)
+            && (teamFiles.teamProjectSummary.length === 1);
         if (validTeam) {
             console.log(`team is valid: ${folder.name}`)
             
             // Team names.
             // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
             // }
 
             // Team names.
             // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
-            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames!.id!, teamFiles.teamNames!.mimeType!) as string[][];
+            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
             // }
 
             // Team sponsor names.
             // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
-            parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames!.id!, teamFiles.teamSponsorNames!.mimeType!) as string[][];
+            parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames![0].id!, teamFiles.teamSponsorNames![0].mimeType!) as string[][];
             // }
             
             // Team SME names.
             // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
-            parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames!.id!, teamFiles.teamSMENames!.mimeType!) as string[][];
+            parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames![0].id!, teamFiles.teamSMENames![0].mimeType!) as string[][];
             // }
 
             // Team photo names text.
-            parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames!.id!, teamFiles.teamPhotoNames!.mimeType!) as string;
+            parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames![0].id!, teamFiles.teamPhotoNames![0].mimeType!) as string;
 
             // Project summary text.
-            parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary!.id!, teamFiles.teamProjectSummary!.mimeType!) as string;
+            parsedTeamContent.teamProjectSummary = await parseDriveFile(teamFiles.teamProjectSummary![0].id!, teamFiles.teamProjectSummary![0].mimeType!) as string;
 
 
             // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
             
             // Build URLs to images and other shareable content.
-            parsedTeamContent.teamPhoto = teamFiles.teamPhoto?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+            parsedTeamContent.teamPhoto = teamFiles.teamPhoto![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
                 export: 'view',
-                id: teamFiles.teamPhoto?.id,
+                id: teamFiles.teamPhoto![0].id,
             }) : '';
-            parsedTeamContent.teamPresentation = teamFiles.teamPresentation?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+            parsedTeamContent.teamPresentation = teamFiles.teamPresentation![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
                 export: 'view',
-                id: teamFiles.teamPresentation?.id,
+                id: teamFiles.teamPresentation![0].id,
             }) : '';
-            parsedTeamContent.teamPoster = teamFiles.teamPoster?.id ? `https://drive.google.com/uc?` + new URLSearchParams({
+            parsedTeamContent.teamPoster = teamFiles.teamPoster![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
                 export: 'view',
-                id: teamFiles.teamPoster?.id,
+                id: teamFiles.teamPoster![0].id,
             }) : '';
 
             // return parsedTeamContent;
@@ -242,39 +258,50 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
 
             console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
 
-            const team: Team = buildTeamsFromCSVStrings(
-                parsedTeamContent.teamTitle!,
-                parsedTeamContent.teamNames!,
-                parsedTeamContent.teamSponsorNames!,
-                parsedTeamContent.teamSMENames!,
-                parsedTeamContent.teamProjectSummary!,
-                parsedTeamContent.teamPhoto!,
-                '', // team video
-                parsedTeamContent.teamPresentation!,
-                parsedTeamContent.teamPoster!,
-                parsedTeamContent.teamPhotoNames!,
-            )
+            try {
+                const team: Team = buildTeamsFromCSVStrings(
+                    parsedTeamContent.teamTitle!,
+                    parsedTeamContent.teamNames!,
+                    parsedTeamContent.teamSponsorNames!,
+                    parsedTeamContent.teamSMENames!,
+                    parsedTeamContent.teamProjectSummary!,
+                    parsedTeamContent.teamPhoto!,
+                    '', // team video
+                    parsedTeamContent.teamPresentation!,
+                    parsedTeamContent.teamPoster!,
+                    parsedTeamContent.teamPhotoNames!,
+                )
 
-            return {
-                team: team,
-                root: folder,
-                status: {
-                    ok: true,
-                },
-            };
+                return {
+                    team: team,
+                    root: folder,
+                    status: {
+                        ok: true,
+                    },
+                };
+            } catch(error) {
+                throw error;
+            }
 
         }
         else {
             console.log(`team is NOT valid: ${folder.name}`)
             var message = 'team is not valid';
-            message += (teamFiles.teamPhoto === undefined) ? '\n- missing teamPhoto' : '';
-            message += (teamFiles.teamPhotoNames === undefined) ? '\n- missing teamPhotoNames' : '';
-            message += (teamFiles.teamNames === undefined) ? '\n- missing teamNames' : '';
-            message += (teamFiles.teamSponsorNames === undefined) ? '\n- missing teamSponsorNames' : '';
-            message += (teamFiles.teamSMENames === undefined) ? '\n- missing teamSMENames' : '';
-            message += (teamFiles.teamPresentation === undefined) ? '\n- missing teamPresentation' : '';
-            message += (teamFiles.teamPoster === undefined) ? '\n- missing teamPoster' : '';
-            message += (teamFiles.teamProjectSummary === undefined) ? '\n- missing teamProjectSummary' : '';
+            message += (teamFiles.teamPhoto === undefined) ? '\n- Missing teamPhoto' : '';
+            message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing teamPhotoNames' : '';
+            message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for teamPhotoNames' : '';
+            message += (teamFiles.teamNames === undefined) ? '\n- Missing teamNames' : '';
+            message += (teamFiles.teamNames !== undefined && teamFiles.teamNames.length > 1) ? '\n- Multiple files found for teamNames' : '';
+            message += (teamFiles.teamSponsorNames === undefined) ? '\n- Missing teamSponsorNames' : '';
+            message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? '\n- Multiple files found for teamSponsorNames' : '';
+            message += (teamFiles.teamSMENames === undefined) ? '\n- Missing teamSMENames' : '';
+            message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? '\n- Multiple files found for teamSMENames' : '';
+            message += (teamFiles.teamPresentation === undefined) ? '\n- Missing teamPresentation' : '';
+            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? '\n- Multiple files found for teamPresentation' : '';
+            message += (teamFiles.teamPoster === undefined) ? '\n- Missing teamPoster' : '';
+            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? '\n- Multiple files found for teamPoster' : '';
+            message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing teamProjectSummary' : '';
+            message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? '\n- Multiple files found for teamProjectSummary' : '';
             return {
                 status: {
                     error: message,
