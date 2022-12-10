@@ -123,7 +123,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
         const files = await driveGetFolderChildren(folder.id);
 
         interface TeamFiles {
-            // teamTitle?: drive_v3.Schema$File;
+            teamTitle?: drive_v3.Schema$File[];
             teamPhoto?: drive_v3.Schema$File[];
             teamPhotoNames?: drive_v3.Schema$File[];
             teamNames?: drive_v3.Schema$File[];
@@ -139,7 +139,11 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             const file = files[index];
             const name = file.name?.toLowerCase();
 
-            if (name?.includes('team_photo_names')) {
+            if (name?.includes('team_title')) {
+                if (teamFiles.teamTitle === undefined) teamFiles.teamTitle = []; // Add new list entry.
+                teamFiles.teamTitle?.push(file);
+            }
+            else if (name?.includes('team_photo_names')) {
                 if (teamFiles.teamPhotoNames === undefined) teamFiles.teamPhotoNames = []; // Add new list entry.
                 teamFiles.teamPhotoNames?.push(file);
             }
@@ -175,13 +179,13 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
 
         interface ParsedTeamContent {
             teamTitle?: string;
-            teamPhoto?: string; // URL string.
+            teamPhoto?: string | string[]; // URL string.
             teamPhotoNames?: string;
             teamNames?: string[][];
             teamSponsorNames?: string[][];
             teamSMENames?: string[][];
-            teamPresentation?: string; // URL string.
-            teamPoster?: string; // URL string.
+            teamPresentation?: string | string[]; // URL string.
+            teamPoster?: string | string[]; // URL string.
             teamProjectSummary?: string;
         }
         var parsedTeamContent: ParsedTeamContent = {};
@@ -189,7 +193,9 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
         // Ensure that all team files have been set.
         // If any are missing then the team is invalid.
         console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
-        const validTeam = (teamFiles.teamPhoto !== undefined)
+        const validTeam = (teamFiles.teamTitle !== undefined)
+            && (teamFiles.teamTitle.length === 1)
+            && (teamFiles.teamPhoto !== undefined)
             && (teamFiles.teamPhoto.length === 1)
             && (teamFiles.teamPhotoNames !== undefined)
             && (teamFiles.teamPhotoNames.length === 1)
@@ -207,9 +213,12 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             && (teamFiles.teamProjectSummary.length === 1);
         if (validTeam) {
             console.log(`team is valid: ${folder.name}`)
-            
-            // Team names.
-            parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
+
+            // Team title.
+            parsedTeamContent.teamTitle = await parseDriveFile(teamFiles.teamTitle![0].id!, teamFiles.teamTitle![0].mimeType!) as string;
+            if (!parsedTeamContent.teamTitle) {
+                parsedTeamContent.teamTitle = folder.name!; // Default to the folder name if anything went wrong.
+            }
 
             // Team names.
             parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
@@ -230,25 +239,45 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             // "https://drive.google.com/file/d/1i_G1zbskuQ8N4dth5RF2pvBjCFr6AceN/view?usp=share_link"
             
             // Build URLs to images and other shareable content.
-            parsedTeamContent.teamPhoto = teamFiles.teamPhoto![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                export: 'view',
-                id: teamFiles.teamPhoto![0].id,
-            }) : '';
-            parsedTeamContent.teamPresentation = teamFiles.teamPresentation![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                export: 'view',
-                id: teamFiles.teamPresentation![0].id,
-            }) : '';
-            parsedTeamContent.teamPoster = teamFiles.teamPoster![0].id ? `https://drive.google.com/uc?` + new URLSearchParams({
-                export: 'view',
-                id: teamFiles.teamPoster![0].id,
-            }) : '';
-
-            parsedTeamContent.teamTitle = folder.name!;
+            if (teamFiles.teamPhoto![0].id) {
+                parsedTeamContent.teamPhoto = [
+                    `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPhoto![0].id,
+                    }),
+                    `./${teamFiles.teamPhoto![0].name}`,
+                ];
+            } else {
+                parsedTeamContent.teamPhoto = ''; // Default to empty string.
+            }
+            if (teamFiles.teamPresentation![0].id) {
+                parsedTeamContent.teamPresentation = [
+                    `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPresentation![0].id,
+                    }),
+                    `./${teamFiles.teamPresentation![0].name}`,
+                ];
+            } else {
+                parsedTeamContent.teamPresentation = ''; // Default to empty string.
+            }
+            if (teamFiles.teamPoster![0].id) {
+                parsedTeamContent.teamPoster = [
+                    `https://drive.google.com/uc?` + new URLSearchParams({
+                        export: 'view',
+                        id: teamFiles.teamPoster![0].id,
+                    }),
+                    `./${teamFiles.teamPoster![0].name}`,
+                ];
+            } else {
+                parsedTeamContent.teamPoster = ''; // Default to empty string.
+            }
 
             console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
 
             try {
                 const team: Team = buildTeamsFromCSVStrings(
+                    folder.name!,
                     parsedTeamContent.teamTitle!,
                     parsedTeamContent.teamNames!,
                     parsedTeamContent.teamSponsorNames!,
@@ -280,6 +309,9 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             console.log(`team is NOT valid: ${folder.name}`)
             var message = 'The team is not valid for the following reasons:';
             message += (teamFiles.teamPhoto === undefined) ? '\n- Missing team photo' : '';
+            message += (teamFiles.teamPhoto !== undefined && teamFiles.teamPhoto.length > 1) ? '\n- Multiple files found for team photo' : '';
+            message += (teamFiles.teamTitle === undefined) ? '\n- Missing team title' : '';
+            message += (teamFiles.teamTitle !== undefined && teamFiles.teamTitle.length > 1) ? '\n- Multiple files found for team title' : '';
             message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing team photo names' : '';
             message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for team photo names' : '';
             message += (teamFiles.teamNames === undefined) ? '\n- Missing team names' : '';
@@ -471,7 +503,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         const file = new Blob([html], {type: 'text/html'});
         const element = document.createElement("a");
         element.href = URL.createObjectURL(file);
-        element.download = `${team.projectTitle}.html`; // Name of file.
+        // element.download = `${team.projectTitle}.html`; // Name of file.
+        element.download = `team_page-${team.teamShortName}.html`; // This is what the file will be named in Drive.
         document.body.appendChild(element); // Required for this to work in FireFox
         element.click();
     }
@@ -495,7 +528,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
         // Create file blob to upload.
         const file = new Blob([html], {type: 'text/html'});
-        const name = `${team.projectTitle}.html`; // This is what the file will be named in Drive.
+        const name = `team_page-${team.teamShortName}.html`; // This is what the file will be named in Drive.
         const parents = [root.id!]; // This is the parent folder.
 
         // First, check if the file exists (using name as the identifier) at the given root directory.
