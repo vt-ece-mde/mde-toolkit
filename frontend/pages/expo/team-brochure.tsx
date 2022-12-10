@@ -1,21 +1,20 @@
 import { getSession } from 'next-auth/react'
 import { GetServerSidePropsContext } from 'next';
-import { drive_v3, google } from "googleapis";
+import { drive_v3 } from "googleapis";
 
 import { renderToStaticMarkup } from 'react-dom/server';
 import  { useEffect, useState, useReducer } from 'react';
 import { PickerCallback } from 'react-google-drive-picker/dist/typeDefs';
-import useDrivePicker from '../../components/googledrivepicker'
+import useDrivePicker from '../../components/googledrivepicker';
 import { Session } from 'next-auth';
 
-import { listFoldersInFolder } from '../../lib/googledrive';
 import { buildTeamsFromCSVStrings, Team } from '../../lib/parsing';
 
 import TeamBrochure from '../../components/TeamBrochure';
 
 
 
-export async function driveCreateFile(params: { 
+async function driveCreateFile(params: { 
         token: string,
         file: Blob,
         metadata: any,
@@ -44,7 +43,7 @@ export async function driveCreateFile(params: {
     }
 }
 
-export async function driveUpdateFile(params: { 
+async function driveUpdateFile(params: { 
         token: string,
         id: string,
         file: Blob,
@@ -197,7 +196,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
 
     // const [pickedFile, setPickedFile] = useState<drive_v3.Schema$File>();
-
 
 
     useEffect(() => {
@@ -829,7 +827,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                         <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
                                                     </svg>
                                                     Open In Google Drive
-                                                    </a>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -838,54 +836,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         </table>
                     </div>
                 </>}
-
-                {/* {pickedFolders.map(file => <>
-                    <div key={file.id} className="pb-3 flex flex-row">
-                        <div>
-                            <a href='#' onClick={() => {
-                                dispatch({ type: 'update-state', state: {
-                                    selectedTeamToDisplay: file.id!,
-                                }});
-                            }}>{JSON.stringify(file.name)}</a>
-                        </div>
-                        <div>
-                            {(() => {
-                                if (!teams.has(file.id!)) {
-                                    return (<>
-                                        <div className='flex flex-row ml-3'>
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <p>Loading...</p>
-                                        </div>
-                                    </>);
-                                }
-                                else if (teams.get(file.id!)?.status.ok !== undefined) {
-                                    return (<>
-                                        <div className='flex flex-row ml-3'>
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 stroke-green-500">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                            </svg>
-                                            <p>OK</p>
-                                        </div>
-                                    </>);
-                                }
-                                else if (teams.get(file.id!)?.status.error !== undefined) {
-                                    // return (<p>ERROR: {JSON.stringify(teams.get(file.id!)?.status.error)}</p>);
-                                    return (<>
-                                        <div className='flex flex-row ml-3'>
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                            </svg>
-                                            <p>ERROR: {JSON.stringify(teams.get(file.id!)?.status.error)}</p>
-                                        </div>
-                                    </>);
-                                }
-                            })()}
-                        </div>
-                    </div>
-                </>)} */}
             </div>
             <div className="p-5">
 
@@ -895,17 +845,17 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                     <div className="flex flex-col items-center justify-center">
                         <div className='mb-4'>How would you like to use the team brochure pages?</div>
                         <div className="flex flex-row space-x-3">
-                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) }>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                            </svg>
-                                Upload to Google Drive
+                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                </svg>
+                                Upload all to Google Drive
                             </button>
-                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) }>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                                Download as HTML
+                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => downloadTeamListAsHTML(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                Download all as HTML
                             </button>
                         </div>
                     </div>
@@ -916,19 +866,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                 <div>
                     {(() => {
                         if (selectedTeamToDisplay.length > 0) {
-                            // const team = teams.get(selectedTeamToDisplay)!.team
-                            if (teams.has(selectedTeamToDisplay) && teams.get(selectedTeamToDisplay)?.status.ok !== undefined) {
-                                return (<>
-                                    <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
-                                    <TeamBrochure {...teams.get(selectedTeamToDisplay)!.team!} />
-                                </>);
-                            }
-                            else {
-                                return (<>
-                                    <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
-                                    <p>Team does not exist: {pickedFolders.find(folder => folder.id! === selectedTeamToDisplay)?.name || '(empty)'}</p>
-                                </>);
-                            }
+
+                            return <TeamDisplayArea parentFolder={pickedFolders.find(folder => folder.id! === selectedTeamToDisplay)} pt={teams.get(selectedTeamToDisplay)}/>
                         }
                     })()}
                 </div>
@@ -936,6 +875,50 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         </div>
     </>);
 }
+
+
+
+function TeamDisplayArea(props: { parentFolder?: drive_v3.Schema$File, pt?: ParsedTeam }) {
+    if (props.pt?.status.ok !== undefined) {
+        return (<>
+            <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+            <TeamBrochure {...props.pt.team!} />
+        </>);
+    }
+    else if (props.pt?.status.error !== undefined) {
+        return (<>
+            <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+            <div className="flex flex-column">
+                <div className='flex flex-row pb-3'>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <p>An error occurred with team: {props.parentFolder?.name || '(empty)'}</p>
+                </div>
+                <div className='pb-3'>
+                    <a className='flex flex-row' href={`https://drive.google.com/drive/u/1/folders/${props.parentFolder?.id}`} target="_blank" rel="noopener noreferrer">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mr-1">
+                            <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
+                        </svg>
+                        Jump to this team in Google Drive to fix manually (opens in new tab)
+                    </a>
+                </div>
+                <div className='flex flex-column'>
+                    <p className='text-lg font-bold'>Errors:</p>
+                    <p>{props.pt?.status.error}</p>
+                </div>
+            </div>
+        </>);
+    }
+    else {
+        return (<>
+            <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+            <p>Team does not exist: {props.parentFolder?.name || '(empty)'}</p>
+        </>);
+    }
+}
+
+
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
     const { req, resolvedUrl } = context;
