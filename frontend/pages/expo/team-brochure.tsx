@@ -590,51 +590,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         }
     }
 
-    const uploadTeamListToGoogleDrive = async (teamlist: {id: string, team: Team, root: drive_v3.Schema$File}[]) => {
-        
-        for (let index = 0; index < teamlist.length; index++) {
-            const {id, team, root} = teamlist[index];
-            uploadTeamToGoogleDrive(id, team, root);
-        }
-
-        // const uploadTeams = async (root: drive_v3.Schema$File) => {
-        //     // teams.forEach((team, key) => {
-        //     //     uploadTeamToGoogleDrive(team, root);
-        //     // });
-        //     // for (let index = 0; index < teamlist.length; index++) {
-        //     //     const {id, team, root} = teamlist[index];
-        //     //     uploadTeamToGoogleDrive(id, team, root);
-        //     // }
-        // }
-
-
-        // const handler = async (data: PickerCallback) => {
-        //     if (data.action === 'picked') {
-        //         console.log(`UPLOADING TO: ${JSON.stringify(data.docs[0])}`)
-        //         uploadTeams(data.docs[0]);
-        //     }
-        // }
-
-
-        // openPicker({
-        //     clientId: "", // Not required, but must be provided as an empty string.
-        //     developerKey: "", // Not required, but must be provided as an empty string.
-        //     token: access_token, // pass oauth token in case you already have one
-        //     // viewId: "DOCS", // All Google Drive document types.
-        //     viewId: "FOLDERS", // Only show folders.
-        //     showUploadView: false,
-        //     showUploadFolders: true,
-        //     supportDrives: true,
-        //     multiselect: false,
-        //     callbackFunction: handler,
-        //     // setParentFolder: parentId,
-        // })
-
-        // for (let index = 0; index < teams.length; index++) {
-        //     const team = teams[index];
-        //     uploadTeamToGoogleDrive(team);
-        // }
-    }
 
 
     const handlePickerSelection = async (data: PickerCallback) => {
