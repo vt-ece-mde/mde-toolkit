@@ -278,7 +278,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
         }
         else {
             console.log(`team is NOT valid: ${folder.name}`)
-            var message = 'team is not valid';
+            var message = 'The team is not valid for the following reasons:';
             message += (teamFiles.teamPhoto === undefined) ? '\n- Missing team photo' : '';
             message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing team photo names' : '';
             message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for team photo names' : '';
@@ -588,8 +588,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             clientId: "", // Not required, but must be provided as an empty string.
             developerKey: "", // Not required, but must be provided as an empty string.
             token: access_token, // pass oauth token in case you already have one
-            // viewId: "DOCS", // All Google Drive document types.
-            viewId: "FOLDERS", // Only show folders.
+            viewId: "DOCS", // All Google Drive document types.
+            // viewId: "FOLDERS", // Only show folders.
             showUploadView: false,
             showUploadFolders: true,
             supportDrives: true,
@@ -604,7 +604,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         <div className='flex flex-col items-center justify-center pt-4'>
 
             {/* Title with instruction text */}
-            <div className='text-6xl font-bold mb-4'>Team Brochure Page</div>
+            <div className='text-6xl font-bold mb-4'>Team Brochure HTML Page Generator</div>
             <div className='mb-4'>Use the button below to select the team folders to process.</div>
             <div className='mb-2'>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="animate-bounce w-6 h-6">
@@ -627,14 +627,14 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             </>) : null }
 
             {/* Display selected file contents. */}
-            <div className="p-5">
+            <div className="pt-5">
                 {pickedFolders.length === 0 ? null : <>
                     <div className=''>
                         <table className='table-fixed border-separate border-spacing-y-2 border-spacing-x-3'>
                             <thead className='text-xl font-bold'>
                                 <tr>
                                     <td>Team Folder</td>
-                                    <td>Parsing Status</td>
+                                    <td>Status</td>
                                     <td>Links</td>
                                 </tr>
                             </thead>
@@ -756,7 +756,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                     </div>
                 </>}
             </div>
-            <div className="p-5">
+            <div className="py-5">
 
                 {/* Area to show list of teams selected. */}
                 <div>
