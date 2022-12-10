@@ -188,7 +188,6 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
 
         // Ensure that all team files have been set.
         // If any are missing then the team is invalid.
-        // const validTeam = Object.values(teamFiles).every(f => f !== undefined && f.id !== undefined);
         console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
         const validTeam = (teamFiles.teamPhoto !== undefined)
             && (teamFiles.teamPhoto.length === 1)
@@ -210,24 +209,16 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             console.log(`team is valid: ${folder.name}`)
             
             // Team names.
-            // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
             parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
-            // }
 
             // Team names.
-            // if (teamFiles.teamNames && teamFiles.teamNames.id && teamFiles.teamNames.mimeType) {
             parsedTeamContent.teamNames = await parseDriveFile(teamFiles.teamNames![0].id!, teamFiles.teamNames![0].mimeType!) as string[][];
-            // }
 
             // Team sponsor names.
-            // if (teamFiles.teamSponsorNames && teamFiles.teamSponsorNames.id && teamFiles.teamSponsorNames.mimeType) {
             parsedTeamContent.teamSponsorNames = await parseDriveFile(teamFiles.teamSponsorNames![0].id!, teamFiles.teamSponsorNames![0].mimeType!) as string[][];
-            // }
             
             // Team SME names.
-            // if (teamFiles.teamSMENames && teamFiles.teamSMENames.id && teamFiles.teamSMENames.mimeType) {
             parsedTeamContent.teamSMENames = await parseDriveFile(teamFiles.teamSMENames![0].id!, teamFiles.teamSMENames![0].mimeType!) as string[][];
-            // }
 
             // Team photo names text.
             parsedTeamContent.teamPhotoNames = await parseDriveFile(teamFiles.teamPhotoNames![0].id!, teamFiles.teamPhotoNames![0].mimeType!) as string;
@@ -252,8 +243,6 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
                 id: teamFiles.teamPoster![0].id,
             }) : '';
 
-            // return parsedTeamContent;
-
             parsedTeamContent.teamTitle = folder.name!;
 
             console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
@@ -271,7 +260,6 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
                     parsedTeamContent.teamPoster!,
                     parsedTeamContent.teamPhotoNames!,
                 )
-
                 return {
                     team: team,
                     root: folder,
@@ -280,28 +268,32 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
                     },
                 };
             } catch(error) {
-                throw error;
+                return {
+                    status: {
+                        error: error,
+                    },
+                };
             }
 
         }
         else {
             console.log(`team is NOT valid: ${folder.name}`)
             var message = 'team is not valid';
-            message += (teamFiles.teamPhoto === undefined) ? '\n- Missing teamPhoto' : '';
-            message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing teamPhotoNames' : '';
-            message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for teamPhotoNames' : '';
-            message += (teamFiles.teamNames === undefined) ? '\n- Missing teamNames' : '';
-            message += (teamFiles.teamNames !== undefined && teamFiles.teamNames.length > 1) ? '\n- Multiple files found for teamNames' : '';
-            message += (teamFiles.teamSponsorNames === undefined) ? '\n- Missing teamSponsorNames' : '';
-            message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? '\n- Multiple files found for teamSponsorNames' : '';
-            message += (teamFiles.teamSMENames === undefined) ? '\n- Missing teamSMENames' : '';
-            message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? '\n- Multiple files found for teamSMENames' : '';
-            message += (teamFiles.teamPresentation === undefined) ? '\n- Missing teamPresentation' : '';
-            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? '\n- Multiple files found for teamPresentation' : '';
-            message += (teamFiles.teamPoster === undefined) ? '\n- Missing teamPoster' : '';
-            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? '\n- Multiple files found for teamPoster' : '';
-            message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing teamProjectSummary' : '';
-            message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? '\n- Multiple files found for teamProjectSummary' : '';
+            message += (teamFiles.teamPhoto === undefined) ? '\n- Missing team photo' : '';
+            message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing team photo names' : '';
+            message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for team photo names' : '';
+            message += (teamFiles.teamNames === undefined) ? '\n- Missing team names' : '';
+            message += (teamFiles.teamNames !== undefined && teamFiles.teamNames.length > 1) ? '\n- Multiple files found for team names' : '';
+            message += (teamFiles.teamSponsorNames === undefined) ? '\n- Missing team sponsor names' : '';
+            message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? '\n- Multiple files found for team sponsor names' : '';
+            message += (teamFiles.teamSMENames === undefined) ? '\n- Missing team SME names' : '';
+            message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? '\n- Multiple files found for team SME names' : '';
+            message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
+            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? '\n- Multiple files found for team presentation' : '';
+            message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
+            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? '\n- Multiple files found for team poster' : '';
+            message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing team project summary' : '';
+            message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? '\n- Multiple files found for team project summary' : '';
             return {
                 status: {
                     error: message,
