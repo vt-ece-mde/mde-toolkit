@@ -118,7 +118,7 @@ const parseDriveFile = async (id: string, mimeType: string): Promise<string|stri
 }
 
 
-const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<{ team?: Team, status: any }> => {
+const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam> => {
     if (folder.id) {
         const files = await driveGetFolderChildren(folder.id);
 
@@ -257,6 +257,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<{ team?: T
 
             return {
                 team: team,
+                root: folder,
                 status: {
                     ok: true,
                 },
@@ -310,6 +311,7 @@ const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> 
 
 interface ParsedTeam {
     team?: Team,
+    root?: drive_v3.Schema$File,
     status: any,
 }
 
@@ -402,7 +404,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             // For each folder, add the parsed team to the state.
             folders.map(async (folder) => {
                 const { team, status } = await parseTeamFolder(folder);
-                dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status } });
+                dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
                 // // Add team to state if the team is defined.
                 // if (team !== undefined) {
                 //     dispatch({ type: 'set-team', id: folder.id!, team: team });
@@ -571,7 +573,11 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         // TODO: upload team HTML files to Drive.
     }
 
-    const uploadTeamToGoogleDrive = async (team: Team, root: drive_v3.Schema$File) => {
+    const uploadTeamToGoogleDrive = async (id: string, team: Team, root: drive_v3.Schema$File) => {
+
+        dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+            uploading: true,
+        }}});
 
         // Convert team page to HTML string.
         const html: string = exportTeamBrochurePageToHTMLString(team);
@@ -599,9 +605,27 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         name: name,
                     },
                 })
-                console.log(`Updated file: ${JSON.stringify(json)}`)
+
+                if (json.error !== undefined) {
+                    dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                        error: JSON.stringify(json.error, null, 4),
+                    }}});
+
+                    console.log(`Error in file creation: ${JSON.stringify(json)}`);
+                }
+                else {
+                    dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                        ok: true,
+                    }}});
+                    console.log(`Created file: ${JSON.stringify(json)}`);
+                }
+
+                console.log(`Updated file: ${JSON.stringify(json)}`);
             } catch (error) {
-                console.table(error)
+                console.table(error);
+                dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                    error: JSON.stringify(error, null, 4),
+                }}});
             }
         }
         else {
@@ -615,47 +639,68 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         parents: parents,
                     },
                     });
-                console.log(`Created file: ${JSON.stringify(json)}`);
+
+                if (json.error !== undefined) {
+                    dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                        error: JSON.stringify(json.error, null, 4),
+                    }}});
+
+                    console.log(`Error in file creation: ${JSON.stringify(json)}`);
+                }
+                else {
+                    dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                        ok: true,
+                    }}});
+                    console.log(`Created file: ${JSON.stringify(json)}`);
+                }
             } catch (error) {
-                console.table(error)
+                console.table(error);
+                dispatch({ type: 'set-team', id: id, pt: { team: team, root: root, status: {
+                    error: JSON.stringify(error, null, 4),
+                }}});
             }
         }
     }
 
-    const uploadTeamListToGoogleDrive = async (teams: Team[]) => {
-
-        const uploadTeams = async (root: drive_v3.Schema$File) => {
-            // teams.forEach((team, key) => {
-            //     uploadTeamToGoogleDrive(team, root);
-            // });
-            for (let index = 0; index < teams.length; index++) {
-                const team = teams[index];
-                uploadTeamToGoogleDrive(team, root);
-            }
+    const uploadTeamListToGoogleDrive = async (teamlist: {id: string, team: Team, root: drive_v3.Schema$File}[]) => {
+        
+        for (let index = 0; index < teamlist.length; index++) {
+            const {id, team, root} = teamlist[index];
+            uploadTeamToGoogleDrive(id, team, root);
         }
 
+        // const uploadTeams = async (root: drive_v3.Schema$File) => {
+        //     // teams.forEach((team, key) => {
+        //     //     uploadTeamToGoogleDrive(team, root);
+        //     // });
+        //     // for (let index = 0; index < teamlist.length; index++) {
+        //     //     const {id, team, root} = teamlist[index];
+        //     //     uploadTeamToGoogleDrive(id, team, root);
+        //     // }
+        // }
 
-        const handler = async (data: PickerCallback) => {
-            if (data.action === 'picked') {
-                console.log(`UPLOADING TO: ${JSON.stringify(data.docs[0])}`)
-                uploadTeams(data.docs[0]);
-            }
-        }
+
+        // const handler = async (data: PickerCallback) => {
+        //     if (data.action === 'picked') {
+        //         console.log(`UPLOADING TO: ${JSON.stringify(data.docs[0])}`)
+        //         uploadTeams(data.docs[0]);
+        //     }
+        // }
 
 
-        openPicker({
-            clientId: "", // Not required, but must be provided as an empty string.
-            developerKey: "", // Not required, but must be provided as an empty string.
-            token: access_token, // pass oauth token in case you already have one
-            // viewId: "DOCS", // All Google Drive document types.
-            viewId: "FOLDERS", // Only show folders.
-            showUploadView: false,
-            showUploadFolders: true,
-            supportDrives: true,
-            multiselect: false,
-            callbackFunction: handler,
-            // setParentFolder: parentId,
-        })
+        // openPicker({
+        //     clientId: "", // Not required, but must be provided as an empty string.
+        //     developerKey: "", // Not required, but must be provided as an empty string.
+        //     token: access_token, // pass oauth token in case you already have one
+        //     // viewId: "DOCS", // All Google Drive document types.
+        //     viewId: "FOLDERS", // Only show folders.
+        //     showUploadView: false,
+        //     showUploadFolders: true,
+        //     supportDrives: true,
+        //     multiselect: false,
+        //     callbackFunction: handler,
+        //     // setParentFolder: parentId,
+        // })
 
         // for (let index = 0; index < teams.length; index++) {
         //     const team = teams[index];
@@ -765,7 +810,18 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                         </svg>
-                                                        <p>Loading...</p>
+                                                        <p>Parsing...</p>
+                                                    </div>
+                                                </>);
+                                            }
+                                            else if (teams.get(folder.id!)?.status.uploading !== undefined) {
+                                                return (<>
+                                                    <div className='flex flex-row'>
+                                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        <p>Uploading...</p>
                                                     </div>
                                                 </>);
                                             }
@@ -822,7 +878,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                     <button className='flex flex-row disabled:text-slate-400 enabled:hover:text-blue-600' onClick={() => {
                                                         const pt = teams.get(folder.id!);
                                                         if (pt?.status.ok !== undefined) {
-                                                            uploadTeamToGoogleDrive(pt?.team!, folder);
+                                                            uploadTeamToGoogleDrive(folder.id!, pt?.team!, folder);
                                                         }
                                                     }} disabled={teams.get(folder.id!)?.status.ok === undefined}>
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -866,7 +922,14 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                     <div className="flex flex-col items-center justify-center">
                         <div className='mb-4'>How would you like to use the team brochure pages?</div>
                         <div className="flex flex-row space-x-3">
-                            <button className="bg-green-500 hover:bg-green-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => uploadTeamListToGoogleDrive(Array.from(teams.values()).filter((pt) => pt.status.ok !== undefined).map((pt) => pt.team!)) } disabled={fetching}>
+                            <button className="bg-green-500 hover:bg-green-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-2 px-4 rounded flex flex-row" onClick={ () => {
+                                Array.from(teams.entries()).forEach(([id, pt], index) => {
+                                    const {team, root, status} = pt;
+                                    if (status.ok !== undefined) {
+                                        uploadTeamToGoogleDrive(id, team!, root!);
+                                    }
+                                });
+                            } } disabled={fetching}>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
