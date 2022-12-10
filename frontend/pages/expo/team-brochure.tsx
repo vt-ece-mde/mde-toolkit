@@ -500,78 +500,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         }
     }
 
-    const testUpload = async () => {
-        // parent
-        // 1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C
-
-
-        const html: string = `
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Some Title</title>
-                <script src="https://cdn.tailwindcss.com"></script>
-            </head>
-            <body>
-                <div>This is a test</div>
-                <div>Current date and time: ${new Date().toLocaleString()}</div>
-            </body>
-        </html>
-        `;
-        const file = new Blob([html], {type: 'text/html'});
-        
-        const name = 'testhtml.html' // This is what the file will be named in Drive.
-        const parents = ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'] // This is the parent folder.
-        const query = `name contains '${name}' and '${parents[0]}' in parents and trashed=false`;
-        const files = await driveGetFileIfExists(query);
-
-        if (files.length > 0) {
-            console.log(`FILE ALREADY EXISTS: ${JSON.stringify(files)}`)
-
-            const metadata = {
-                name: 'testhtml.html', // This is what the file will be named in Drive.
-                // Cannot add parents in metadata of update.
-            }
-
-            try {
-                console.log(`in try`)
-                const json = await driveUpdateFile({
-                    token: access_token,
-                    id: files[0].id!,
-                    file: file,
-                    metadata: metadata,
-                })
-                console.log(`GOT JSON BACK: ${JSON.stringify(json)}`)
-            } catch (error) {
-                console.table(error)
-            }
-        }
-        else {
-
-            const metadata = {
-                name: 'testhtml.html', // This is what the file will be named in Drive.
-                parents: ['1FKFkwJWfX9BQ1jJYzjFLC4FbrEpy830C'], // This is the parent folder.
-            }
-
-            console.log(`FILE DOES NOT EXIST`)
-            driveCreateFile({
-                token: access_token,
-                file: file,
-                metadata: metadata,
-                })
-                .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
-                .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
-        }
-
-        // driveUploadFileMultipart(access_token, file, metadata)
-        //     .then(json => console.log(`GOT JSON BACK: ${JSON.stringify(json)}`))
-        //     .catch(err => console.log(`GOT ERR BACK: ${JSON.stringify(err)}`))
-
-        // TODO: check if file exists before creating. If it exists, then PATCH instead with fileId to update existing file. Otherwise POST to create new file.
-
-        // TODO: upload team HTML files to Drive.
-    }
 
     const uploadTeamToGoogleDrive = async (id: string, team: Team, root: drive_v3.Schema$File) => {
 
@@ -752,8 +680,6 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
     return (<>
         <div className='flex flex-col items-center justify-center pt-4'>
-
-            <button onClick={ _ => testUpload() } className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800" disabled={ fetching }>TEST UPLOAD</button>
 
             {/* Title with instruction text */}
             <div className='text-6xl font-bold mb-4'>Team Brochure Page</div>
