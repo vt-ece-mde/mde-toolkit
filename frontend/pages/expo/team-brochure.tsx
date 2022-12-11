@@ -338,10 +338,10 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? `\n- Multiple files found for team sponsor names: ${JSON.stringify(teamFiles.teamSponsorNames.map(file => file.name))}` : '';
             message += (teamFiles.teamSMENames === undefined) ? '\n- Missing team SME names' : '';
             message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? `\n- Multiple files found for team SME names: ${JSON.stringify(teamFiles.teamSMENames.map(file => file.name))}` : '';
-            message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
-            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? `\n- Multiple files found for team presentation: ${JSON.stringify(teamFiles.teamPresentation.map(file => file.name))}` : '';
-            message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
-            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? `\n- Multiple files found for team poster: ${JSON.stringify(teamFiles.teamPoster.map(file => file.name))}` : '';
+            // message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
+            // message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? `\n- Multiple files found for team presentation: ${JSON.stringify(teamFiles.teamPresentation.map(file => file.name))}` : '';
+            // message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
+            // message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? `\n- Multiple files found for team poster: ${JSON.stringify(teamFiles.teamPoster.map(file => file.name))}` : '';
             message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing team project summary' : '';
             message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? `\n- Multiple files found for team project summary: ${JSON.stringify(teamFiles.teamProjectSummary.map(file => file.name))}` : '';
             return {
