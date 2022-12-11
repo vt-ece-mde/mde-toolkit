@@ -80,17 +80,35 @@ async function driveUpdateFile(params: {
 
 const driveGetFolderChildren = async (id: string, type: 'all'|'files'|'folders' = 'all'): Promise<drive_v3.Schema$File[]> => {
 
-    // Get all children in selected folder.
-    const res = await fetch(`/api/google/drive/list/${id}?` + new URLSearchParams({
-        type: type,
-        // type: 'all', // 'all'|'files'|'folders'
-        // type: 'files', // 'all'|'files'|'folders'
-    }))
-    const j = await res.json()
-    console.log(`GOT RES: ${JSON.stringify(j)}`)
+    // Create query string.
+    let q = `'${id}' in parents and trashed=false`;
+    switch (type) {
+        case 'files':
+            q = `${q} and mimeType != 'application/vnd.google-apps.folder'`
+            break;
+        case 'folders':
+            q = `${q} and mimeType = 'application/vnd.google-apps.folder'`
+            break;
+        default: // type = 'all'
+            break;
+    }
 
-    // Return list of children.
-    return j;
+    // Get all children in selected folder.
+    const url = '/api/google/drive/files/list?' + new URLSearchParams({
+        q: q,
+        supportsAllDrives: 'true',
+        includeItemsFromAllDrives: 'true',
+    });
+    const res = await fetch(url);
+    const json = await res.json();
+    console.log(`GOT RES: ${JSON.stringify(json)}`)
+
+    const files = json.files;
+    if (files !== undefined && files.length) {
+        return files; // Return list of children.
+    } else {
+        return [];
+    }
 }
 
 const driveGetFolderParent = async (id: string): Promise<string> => {
@@ -205,10 +223,10 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             && (teamFiles.teamSponsorNames.length === 1)
             && (teamFiles.teamSMENames !== undefined)
             && (teamFiles.teamSMENames.length === 1)
-            && (teamFiles.teamPresentation !== undefined)
-            && (teamFiles.teamPresentation.length === 1)
-            && (teamFiles.teamPoster !== undefined)
-            && (teamFiles.teamPoster.length === 1)
+            // && (teamFiles.teamPresentation !== undefined)
+            // && (teamFiles.teamPresentation.length === 1)
+            // && (teamFiles.teamPoster !== undefined)
+            // && (teamFiles.teamPoster.length === 1)
             && (teamFiles.teamProjectSummary !== undefined)
             && (teamFiles.teamProjectSummary.length === 1);
         if (validTeam) {
@@ -250,7 +268,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             } else {
                 parsedTeamContent.teamPhoto = ''; // Default to empty string.
             }
-            if (teamFiles.teamPresentation![0].id) {
+            if (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation![0].id) {
                 parsedTeamContent.teamPresentation = [
                     `https://drive.google.com/uc?` + new URLSearchParams({
                         export: 'view',
@@ -261,7 +279,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             } else {
                 parsedTeamContent.teamPresentation = ''; // Default to empty string.
             }
-            if (teamFiles.teamPoster![0].id) {
+            if (teamFiles.teamPoster !== undefined && teamFiles.teamPoster![0].id) {
                 parsedTeamContent.teamPoster = [
                     `https://drive.google.com/uc?` + new URLSearchParams({
                         export: 'view',
@@ -309,23 +327,23 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             console.log(`team is NOT valid: ${folder.name}`)
             var message = 'The team is not valid for the following reasons:';
             message += (teamFiles.teamPhoto === undefined) ? '\n- Missing team photo' : '';
-            message += (teamFiles.teamPhoto !== undefined && teamFiles.teamPhoto.length > 1) ? '\n- Multiple files found for team photo' : '';
+            message += (teamFiles.teamPhoto !== undefined && teamFiles.teamPhoto.length > 1) ? `\n- Multiple files found for team photo: ${JSON.stringify(teamFiles.teamPhoto.map(file => file.name))}` : '';
             message += (teamFiles.teamTitle === undefined) ? '\n- Missing team title' : '';
-            message += (teamFiles.teamTitle !== undefined && teamFiles.teamTitle.length > 1) ? '\n- Multiple files found for team title' : '';
+            message += (teamFiles.teamTitle !== undefined && teamFiles.teamTitle.length > 1) ? `\n- Multiple files found for team title: ${JSON.stringify(teamFiles.teamTitle.map(file => file.name))}` : '';
             message += (teamFiles.teamPhotoNames === undefined) ? '\n- Missing team photo names' : '';
-            message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? '\n- Multiple files found for team photo names' : '';
+            message += (teamFiles.teamPhotoNames !== undefined && teamFiles.teamPhotoNames.length > 1) ? `\n- Multiple files found for team photo names: ${JSON.stringify(teamFiles.teamPhotoNames.map(file => file.name))}` : '';
             message += (teamFiles.teamNames === undefined) ? '\n- Missing team names' : '';
-            message += (teamFiles.teamNames !== undefined && teamFiles.teamNames.length > 1) ? '\n- Multiple files found for team names' : '';
+            message += (teamFiles.teamNames !== undefined && teamFiles.teamNames.length > 1) ? `\n- Multiple files found for team names: ${JSON.stringify(teamFiles.teamNames.map(file => file.name))}` : '';
             message += (teamFiles.teamSponsorNames === undefined) ? '\n- Missing team sponsor names' : '';
-            message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? '\n- Multiple files found for team sponsor names' : '';
+            message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? `\n- Multiple files found for team sponsor names: ${JSON.stringify(teamFiles.teamSponsorNames.map(file => file.name))}` : '';
             message += (teamFiles.teamSMENames === undefined) ? '\n- Missing team SME names' : '';
-            message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? '\n- Multiple files found for team SME names' : '';
+            message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? `\n- Multiple files found for team SME names: ${JSON.stringify(teamFiles.teamSMENames.map(file => file.name))}` : '';
             message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
-            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? '\n- Multiple files found for team presentation' : '';
+            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? `\n- Multiple files found for team presentation: ${JSON.stringify(teamFiles.teamPresentation.map(file => file.name))}` : '';
             message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
-            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? '\n- Multiple files found for team poster' : '';
+            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? `\n- Multiple files found for team poster: ${JSON.stringify(teamFiles.teamPoster.map(file => file.name))}` : '';
             message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing team project summary' : '';
-            message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? '\n- Multiple files found for team project summary' : '';
+            message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? `\n- Multiple files found for team project summary: ${JSON.stringify(teamFiles.teamProjectSummary.map(file => file.name))}` : '';
             return {
                 status: {
                     error: message,
