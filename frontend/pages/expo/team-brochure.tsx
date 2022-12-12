@@ -749,7 +749,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                         </td>
                                         <td>
                                             <div className='flex flex-row space-x-4'>
-                                                <a className='flex flex-row group relative' href='#' onClick={() => {
+                                                <button className='flex flex-row group relative' onClick={() => {
                                                     dispatch({ type: 'update-state', state: {
                                                         selectedTeamToDisplay: folder.id!,
                                                     }});
@@ -763,7 +763,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                                                     <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-36 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
                                                         Open Page Preview
                                                     </span>
-                                                </a>
+                                                </button>
                                                 <a className='flex flex-row group relative' href={`https://drive.google.com/drive/u/1/folders/${folder.id}`} target="_blank" rel="noopener noreferrer">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                                                         <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
