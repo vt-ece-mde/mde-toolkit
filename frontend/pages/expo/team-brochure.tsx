@@ -14,6 +14,7 @@ import TeamBrochure from '../../components/TeamBrochure';
 
 
 
+
 async function driveCreateFile(params: { 
         token: string,
         file: Blob,
@@ -197,13 +198,13 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
 
         interface ParsedTeamContent {
             teamTitle?: string;
-            teamPhoto?: string | string[]; // URL string.
+            teamPhoto?: string; // URL string.
             teamPhotoNames?: string;
             teamNames?: string[][];
             teamSponsorNames?: string[][];
             teamSMENames?: string[][];
-            teamPresentation?: string | string[]; // URL string.
-            teamPoster?: string | string[]; // URL string.
+            teamPresentation?: string; // URL string.
+            teamPoster?: string; // URL string.
             teamProjectSummary?: string;
         }
         var parsedTeamContent: ParsedTeamContent = {};
@@ -258,38 +259,43 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             
             // Build URLs to images and other shareable content.
             if (teamFiles.teamPhoto![0].id) {
-                parsedTeamContent.teamPhoto = [
-                    `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPhoto![0].id,
-                    }),
-                    `./${teamFiles.teamPhoto![0].name}`,
-                ];
+                parsedTeamContent.teamPhoto = `./${teamFiles.teamPhoto![0].name}`
+                // parsedTeamContent.teamPhoto = [
+                //     `https://drive.google.com/uc?` + new URLSearchParams({
+                //         export: 'view',
+                //         id: teamFiles.teamPhoto![0].id,
+                //     }),
+                //     `./${teamFiles.teamPhoto![0].name}`,
+                // ];
             } else {
                 parsedTeamContent.teamPhoto = ''; // Default to empty string.
             }
             if (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation![0].id) {
-                parsedTeamContent.teamPresentation = [
-                    `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPresentation![0].id,
-                    }),
-                    `./${teamFiles.teamPresentation![0].name}`,
-                ];
+                parsedTeamContent.teamPresentation = `./${teamFiles.teamPresentation![0].name}`;
+                // parsedTeamContent.teamPresentation = [
+                //     `https://drive.google.com/uc?` + new URLSearchParams({
+                //         export: 'view',
+                //         id: teamFiles.teamPresentation![0].id,
+                //     }),
+                //     `./${teamFiles.teamPresentation![0].name}`,
+                // ];
+                console.log(`Team presentation: ${JSON.stringify(parsedTeamContent.teamPresentation)}`)
             } else {
                 parsedTeamContent.teamPresentation = ''; // Default to empty string.
             }
             if (teamFiles.teamPoster !== undefined && teamFiles.teamPoster![0].id) {
-                parsedTeamContent.teamPoster = [
-                    `https://drive.google.com/uc?` + new URLSearchParams({
-                        export: 'view',
-                        id: teamFiles.teamPoster![0].id,
-                    }),
-                    `./${teamFiles.teamPoster![0].name}`,
-                ];
+                parsedTeamContent.teamPoster = `./${teamFiles.teamPoster![0].name}`;
+                // parsedTeamContent.teamPoster = [
+                //     `https://drive.google.com/uc?` + new URLSearchParams({
+                //         export: 'view',
+                //         id: teamFiles.teamPoster![0].id,
+                //     }),
+                //     `./${teamFiles.teamPoster![0].name}`,
+                // ];
             } else {
                 parsedTeamContent.teamPoster = ''; // Default to empty string.
             }
+
 
             console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
 

@@ -70,10 +70,10 @@ export interface Team
     smes: SME[];
     projectSummary: string;
     teamPhotoNames: string | string[] | string[][]; // Supports string, array for multi-line strings, and 2D array as CSV input.
-    teamPhotoUrl: string | string[]; // Supports alternate URLs as fallbacks.
+    teamPhotoUrl: string; // Supports alternate URLs as fallbacks.
     videoUrl: string | string[]; // Supports alternate URLs as fallbacks.
-    presentationUrl: string | string[]; // Supports alternate URLs as fallbacks.
-    posterUrl: string | string[]; // Supports alternate URLs as fallbacks.
+    presentationUrl: string; // Supports alternate URLs as fallbacks.
+    posterUrl: string; // Supports alternate URLs as fallbacks.
     projectTitle: string;
     teamShortName: string; // This is a short-hand name used for the team (should not contain spaces or special characters).
 }
@@ -107,13 +107,19 @@ function parseTeamNames(teamNamesArr: string[][]): TeamMember[] {
     header = teamNamesArr[0].map(item => item.toLowerCase().trim());
     var headerIndex = new Map<string, number>();
     for(let i = 0; i < header.length; i++) {
-        if (header[i].includes('title')) {
+        // Skip empty header columns.
+        if (header[i].trim().length === 0) {
+            continue;
+        }
+        else if (header[i].includes('title')) {
             headerIndex.set('title', i);
         }
-        else if (header[i].includes('first') && header[i].includes('name')) {
+        // First name.
+        else if (header[i].includes('first')) {
             headerIndex.set('first_name', i);
         }
-        else if (header[i].includes('last') && header[i].includes('name')) {
+        // Last name.
+        else if (header[i].includes('last')) {
             headerIndex.set('last_name', i);
         }
         else if (header[i].includes('email')) {
@@ -138,7 +144,7 @@ function parseTeamNames(teamNamesArr: string[][]): TeamMember[] {
             headerIndex.set('course_comment', i);
         } 
         else {
-            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+            throw Error(`[${parseTeamNames.name}] undefined header key: ${JSON.stringify(header[i])}`)
         }
     }
     //
@@ -189,13 +195,19 @@ function parseSponsorNames(sponsorNamesArr: string[][]): Sponsor[] {
     header = sponsorNamesArr[0].map(item => item.toLowerCase().trim());
     var headerIndex = new Map<string, number>();
     for(let i = 0; i < header.length; i++) {
-        if (header[i].includes('title')) {
+        // Skip empty header columns.
+        if (header[i].trim().length === 0) {
+            continue;
+        }
+        else if (header[i].includes('title')) {
             headerIndex.set('title', i);
         }
-        else if (header[i].includes('first') && header[i].includes('name')) {
+        // First name.
+        else if (header[i].includes('first')) {
             headerIndex.set('first_name', i);
         }
-        else if (header[i].includes('last') && header[i].includes('name')) {
+        // Last name.
+        else if (header[i].includes('last')) {
             headerIndex.set('last_name', i);
         }
         else if (header[i].includes('email')) {
@@ -205,7 +217,7 @@ function parseSponsorNames(sponsorNamesArr: string[][]): Sponsor[] {
             headerIndex.set('company', i);
         }
         else {
-            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+            throw Error(`[${parseSponsorNames.name}] undefined header key: ${JSON.stringify(header[i])}`)
         }
     }
 
@@ -244,13 +256,19 @@ function parseSMENames(smeNamesArr: string[][]): SME[] {
     header = smeNamesArr[0].map(item => item.toLowerCase().trim());
     var headerIndex = new Map<string, number>();
     for(let i = 0; i < header.length; i++) {
-        if (header[i].includes('title')) {
+        // Skip empty header columns.
+        if (header[i].trim().length === 0) {
+            continue;
+        }
+        else if (header[i].includes('title')) {
             headerIndex.set('title', i);
         }
-        else if (header[i].includes('first') && header[i].includes('name')) {
+        // First name.
+        else if (header[i].includes('first')) {
             headerIndex.set('first_name', i);
         }
-        else if (header[i].includes('last') && header[i].includes('name')) {
+        // Last name.
+        else if (header[i].includes('last')) {
             headerIndex.set('last_name', i);
         }
         else if (header[i].includes('email')) {
@@ -260,7 +278,7 @@ function parseSMENames(smeNamesArr: string[][]): SME[] {
             headerIndex.set('company', i);
         }
         else {
-            throw Error(`undefined header key: ${JSON.stringify(header[i])}`)
+            throw Error(`[${parseSMENames.name}] undefined header key: ${JSON.stringify(header[i])}`)
         }
     }
 
@@ -308,8 +326,8 @@ const recursiveStringTrim = (sar: string | string[] | string[][]): string | stri
 
 
 export function buildTeamsFromCSVStrings(teamShortName: string, teamProjectTitle: string, teamNamesArr: string[][], sponsorNamesArr: string[][],
-    smeNamesArr: string[][], projectSummaryStr: string, teamPhotoUrl: string | string[],
-    teamVideoURL: string | string[], teamPowerPointURL: string | string[], teamPosterURL: string | string[], teamPhotoNames: string | string[] | string[][]) : Team {
+    smeNamesArr: string[][], projectSummaryStr: string, teamPhotoUrl: string,
+    teamVideoURL: string, teamPowerPointURL: string, teamPosterURL: string, teamPhotoNames: string | string[] | string[][]) : Team {
 
     // Parse team names
     const teamMembers: TeamMember[] = parseTeamNames(teamNamesArr);
