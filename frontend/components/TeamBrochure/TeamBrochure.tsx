@@ -259,8 +259,13 @@ export default function TeamBrochure( props: Team ) {
                         <div className='text-4xl font-bold text-center text-[#231F20]'>Poster</div>
                         <EmbedFileUrl url={props.posterUrl}>
                             <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
-                                <p>We're sorry, but the file could not be displayed</p>
-                                <a href={props.posterUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                                {props.posterUrl 
+                                    ? (<>
+                                        <p>We're sorry, but the file could not be displayed</p>
+                                        <a href={props.posterUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                                    </>) 
+                                    : (<p>The file does not exist.</p>)
+                                }
                             </div>
                         </EmbedFileUrl>
                     </div>
@@ -268,8 +273,13 @@ export default function TeamBrochure( props: Team ) {
                         <div className='text-4xl font-bold text-center text-[#231F20]'>Presentation</div>
                         <EmbedFileUrl url={props.presentationUrl}>
                             <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
-                                <p>We're sorry, but the file could not be displayed</p>
-                                <a href={props.posterUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                                {props.presentationUrl 
+                                ? (<>
+                                    <p>We're sorry, but the file could not be displayed</p>
+                                    <a href={props.presentationUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                                </>) 
+                                : (<p>The file does not exist.</p>)
+                                }
                             </div>
                         </EmbedFileUrl>
                     </div>
