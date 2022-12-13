@@ -88,19 +88,47 @@ function DefaultImage({ src, alt }: { src: string | string[], alt: string }) {
 }
 
 
+/**
+ * Simple component to display a paragraph element with text that possible contains newlines ('\n').
+ * Inspired by: https://stackoverflow.com/a/73056801
+ */
+function MultilineParagraph(props: { text: string, className?: string }) {
+    return (<>
+    <p>{props.text.split(/\n|\r\n/).map((segment: string, index: number) => (
+        <>
+            {index > 0 && <br />}
+            <div className={props.className}>{segment}</div>
+        </>
+    ))}</p>
+    </>);
+}
+
 export type TeamBrochurePhotoProps = {
     smes: SME[];
     team_photo_names: string | string[] | string[][];
     team_photo_url: string;
 }
 export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
+    var names: string = '';
+    if (typeof props.team_photo_names === 'string') {
+        names = props.team_photo_names;
+    }
+    else {
+        names = (props.team_photo_names as string[]).reduce(
+            (prev: string, cur: any) => `${prev}${(typeof cur === 'string') ? (cur) : (cur.join(', '))}\n`, 
+            '',
+        )
+    }
+
+
     return (
-        <div className="team-figure">
+        <div>
             <figure>
                 {/* <DefaultImage src={props.team_photo_url} alt="Team Photo" /> */}
                 <img src={props.team_photo_url} alt="Team Photo"/>
-                <figcaption className="text-[#76777A] text-md font-normal">
-                    <p>{props.team_photo_names}</p>
+                <figcaption className="text-[#76777A] text-md font-normal font-sans">
+                    {/* <p>{props.team_photo_names}</p> */}
+                    <MultilineParagraph text={names}/>
                     <p>{`SME: ${props.smes.map(sme => `${sme.title} ${sme.firstName} ${sme.lastName}`).join(', ')}`}</p>
                 </figcaption>
             </figure>
@@ -111,8 +139,10 @@ export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
 
 export function TeamChallenge( props: { project_summary: string } ) {
     return (<>
-        <div className="text-[#008891] text-2xl font-normal font-mono">CHALLENGE</div>
-        <div className="text-[#008891] text-xl font-normal font-mono">{props.project_summary}</div>
+        <div className='flex flex-col space-y-2'>
+            <div className="text-[#008891] text-3xl font-normal font-sans">CHALLENGE</div>
+            <div className="text-[#008891] text-xl font-normal font-sans">{props.project_summary}</div>
+        </div>
     </>);
 }
 
@@ -121,15 +151,15 @@ export function TeamMemberInfo( props: TeamMember ) {
     return (<>
         <div className='flex flex-row space-x-3 items-end'>
             <span className="text-[#008891] text-4xl font-bold font-sans">{`${props.firstName} ${props.lastName}`}</span>
-            <span className="text-[#939598] text-lg font-mono">{`${props.hometown}, ${props.StateOrCountry}`}</span>
+            <span className="text-[#939598] text-lg font-sans">{`${props.hometown}, ${props.StateOrCountry}`}</span>
         </div>
         <div className="my-2 w-full border-b-2 border-orange-500 rounded"></div>
-        <div className="-mt-2 text-[#F57F28] text-lg font-bold">{props.degree}, {props.major}</div>
-        <div className="pt-2 text-[#231F20] text-xl font-sans font-bold">
-            Aspirations: <span className="text-[#231F20] text-lg font-serif font-normal">{props.aspiration}</span>
+        <div className="-mt-2 text-[#F57F28] text-lg font-bold font-sans">{props.degree}, {props.major}</div>
+        <div className="pt-2 text-[#231F20] text-xl font-bold font-sans">
+            Aspirations: <span className="text-[#231F20] text-lg font-sans font-normal">{props.aspiration}</span>
         </div>
         <div className="pt-2 text-[#231F20] text-xl font-bold font-sans">
-            Class Comment: <span className="text-[#231F20] text-lg font-serif font-normal">{props.courseComment}</span>
+            Class Comment: <span className="text-[#231F20] text-lg font-sans font-normal">{props.courseComment}</span>
         </div>
     </>);
 }
@@ -151,7 +181,7 @@ export function TeamMembers( props: { team_members: TeamMember[] } ) {
 export function TeamProjectSponsors( props: { sponsors: Sponsor[] } ) {
     const prefix: string = (props.sponsors.length === 0) ? 'PROJECT SPONSOR' : 'PROJECT SPONSORS';
     return (<>
-        <div className="text-[#939598] text-center">
+        <div className="text-[#939598] text-left font-sans text-2xl">
             {prefix}: <span className="text-[#83003F]">{props.sponsors.map(sponsor => `${sponsor.title} ${sponsor.firstName} ${sponsor.lastName}`).join(', ')}</span>
         </div>
     </>);
@@ -201,7 +231,7 @@ export default function TeamBrochure( props: Team ) {
         <div className="p-5 grid grid-cols-1 gap-4">
 
             {/* Project name */}
-            <div className="mb-3 text-5xl text-[#83003F] text-center font-bold font-mono">{props.projectTitle}</div>
+            <div className="mb-3 text-5xl text-[#83003F] text-left font-bold font-sans">{props.projectTitle}</div>
 
             {/* Project info */}
             <div className="grid grid-cols-5 gap-4 pb-4">
@@ -219,13 +249,13 @@ export default function TeamBrochure( props: Team ) {
             </div>
 
             {/* Sponsor information */}
-            <div>
+            <div className="pt-5">
                 <TeamProjectSponsors sponsors={props.sponsors}/>
             </div>
 
             <div className='pt-5'>
                 <div className='flex flex-row space-x-8'>
-                    <div className='flex flex-col w-1/2 h-[600px]'>
+                    <div className='flex flex-col w-1/2 h-[600px] space-y-2'>
                         <div className='text-4xl font-bold text-center text-[#231F20]'>Poster</div>
                         <EmbedFileUrl url={props.posterUrl}>
                             <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
@@ -234,7 +264,7 @@ export default function TeamBrochure( props: Team ) {
                             </div>
                         </EmbedFileUrl>
                     </div>
-                    <div className='flex flex-col w-1/2 h-[600px]'>
+                    <div className='flex flex-col w-1/2 h-[600px] space-y-2'>
                         <div className='text-4xl font-bold text-center text-[#231F20]'>Presentation</div>
                         <EmbedFileUrl url={props.presentationUrl}>
                             <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
