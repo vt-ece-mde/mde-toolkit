@@ -552,7 +552,8 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
         // Create file blob to upload.
         const file = new Blob([html], {type: 'text/html'});
-        const name = `team_page-${team.teamShortName}.html`; // This is what the file will be named in Drive.
+        // const name = `team_page-${team.teamShortName}.html`; // This is what the file will be named in Drive.
+        const name = `team_page.html`; // This is what the file will be named in Drive.
         const parents = [root.id!]; // This is the parent folder.
 
         // First, check if the file exists (using name as the identifier) at the given root directory.
