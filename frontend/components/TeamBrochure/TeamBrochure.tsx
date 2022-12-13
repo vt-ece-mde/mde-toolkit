@@ -234,7 +234,7 @@ export default function TeamBrochure( props: Team ) {
             <div className="mb-3 text-5xl text-[#83003F] text-left font-bold font-sans">{props.projectTitle}</div>
 
             {/* Project info */}
-            <div className="grid grid-cols-5 gap-4 pb-4">
+            <div className="grid grid-cols-5 gap-4 pb-5">
                 <div className="col-span-2">
                     <TeamBrochurePhoto smes={props.smes} team_photo_names={props.teamPhotoNames} team_photo_url={props.teamPhotoUrl}/>
                 </div>
