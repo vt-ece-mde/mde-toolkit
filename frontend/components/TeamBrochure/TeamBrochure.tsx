@@ -120,14 +120,15 @@ export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
         )
     }
 
+    // const url = 'https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492__340.jpg'
+    // const url = 'https://preview.redd.it/wiw2se1paa631.jpg?auto=webp&s=5d3728b211f1ed4cde06091e7c2a34e2f4b13a0b'
+    const url = props.team_photo_url
 
     return (
         <div>
             <figure>
-                {/* <DefaultImage src={props.team_photo_url} alt="Team Photo" /> */}
-                <img src={props.team_photo_url} alt="Team Photo"/>
-                <figcaption className="text-[#76777A] text-md font-normal font-sans">
-                    {/* <p>{props.team_photo_names}</p> */}
+                <img src={url} alt="Team Photo" className='w-full max-h-[30rem] object-contain object-top'/>
+                <figcaption className="text-[#76777A] text-lg font-normal font-sans">
                     <MultilineParagraph text={names}/>
                     <p>{`SME: ${props.smes.map(sme => `${sme.title} ${sme.firstName} ${sme.lastName}`).join(', ')}`}</p>
                 </figcaption>
@@ -141,7 +142,7 @@ export function TeamChallenge( props: { project_summary: string } ) {
     return (<>
         <div className='flex flex-col space-y-2'>
             <div className="text-[#008891] text-3xl font-normal font-sans">CHALLENGE</div>
-            <div className="text-[#008891] text-xl font-normal font-sans">{props.project_summary}</div>
+            <div className="text-[#008891] text-2xl font-normal font-sans">{props.project_summary}</div>
         </div>
     </>);
 }
@@ -234,11 +235,11 @@ export default function TeamBrochure( props: Team ) {
             <div className="mb-3 text-5xl text-[#83003F] text-left font-bold font-sans">{props.projectTitle}</div>
 
             {/* Project info */}
-            <div className="grid grid-cols-5 gap-4 pb-5">
-                <div className="col-span-2">
+            <div className="flex flex-row gap-4 pb-5">
+                <div className="min-w-[40rem]">
                     <TeamBrochurePhoto smes={props.smes} team_photo_names={props.teamPhotoNames} team_photo_url={props.teamPhotoUrl}/>
                 </div>
-                <div className="col-span-3 text-left">
+                <div className="text-left">
                     <TeamChallenge project_summary={props.projectSummary} />
                 </div>
             </div>
