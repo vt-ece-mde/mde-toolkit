@@ -874,12 +874,12 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
  * Simple component to display a paragraph element with text that possible contains newlines ('\n').
  * Inspired by: https://stackoverflow.com/a/73056801
  */
-function MultilineParagraph(props: { text: string }) {
+function MultilineParagraph(props: { text: string, className?: string }) {
     return (<>
     <p>{props.text.split(/\n|\r\n/).map((segment: string, index: number) => (
         <>
             {index > 0 && <br />}
-            {segment}
+            <div className={`whitespace-pre-wrap break-words ${props.className ? props.className : ''}`}>{segment}</div>
         </>
     ))}</p>
     </>);
@@ -913,7 +913,13 @@ function TeamDisplayArea(props: { parentFolder?: drive_v3.Schema$File, pt?: Pars
                 </div>
                 <div className='flex flex-column'>
                     <p className='text-lg font-bold'>Errors:</p>
-                    <MultilineParagraph text={props.pt?.status.error}/>
+                    {
+                        (typeof props.pt?.status.error === 'object')
+                        // Render error object as JSON.
+                        ? (<MultilineParagraph text={props.pt?.status.error.message} className='text-red-500'/>)
+                        // Render string as-is with newline replacement.
+                        : (<MultilineParagraph text={props.pt?.status.error}/>)
+                    }
                 </div>
             </div>
         </>);
