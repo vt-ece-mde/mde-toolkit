@@ -17,6 +17,50 @@ import {
 } from '../../lib/parsing'
 
 
+// const ApplyWrappers = (props: { wrappers: (((children: any) => any) | false)[], children?: any }) => props.wrappers.reduce(
+//     (children: any, wrapper: ((children: any) => any) | false) => wrapper ? wrapper(children) : children,
+//     props.children,
+// );
+
+const ApplyWrappers = (props: { wrappers: (((children: any) => any) | false)[], children?: any }) => {
+    return props.wrappers.reduce(
+        (children: any, wrapper: ((children: any) => any) | false) => wrapper ? wrapper(children) : children,
+        props.children,
+    )
+}
+
+const ConditionalWrapper = (props: { condition: boolean, wrapper: (c: any) => any, children: any}) => props.condition ? props.wrapper(props.children) : props.children;
+
+
+function DefaultUrlIframe(props: { url: string | string[], children?: any, className?: string }) {
+    const url = (typeof props.url === 'string') ? [props.url] : props.url; // Convert to single-element list if necessary.
+    const l = url.map(
+        u => (
+            (children: any) => <iframe src={u} width="100%" height="100%" aria-label='Team Poster' className={props.className !== undefined ? props.className : ''}>{children}</iframe>
+        )
+    )
+    return (<>
+        <ApplyWrappers wrappers={l}>
+            {props.children}
+        </ApplyWrappers>
+    </>);
+}
+
+function DefaultUrlObject(props: { url: string | string[], type: string, children?: any, className?: string }) {
+    const url = (typeof props.url === 'string') ? [props.url] : props.url; // Convert to single-element list if necessary.
+    const l = url.map(
+        u => (
+            (children: any) => <object data={u} type={props.type} width="100%" height="100%" aria-label='Team Poster' className={props.className !== undefined ? props.className : ''}>{children}</object>
+        )
+    )
+    return (<>
+        <ApplyWrappers wrappers={l}>
+            {props.children}
+        </ApplyWrappers>
+    </>);
+}
+
+
 function DefaultImage({ src, alt }: { src: string | string[], alt: string }) {
 
     const recurse = (s: string | string[]) => {
@@ -47,13 +91,14 @@ function DefaultImage({ src, alt }: { src: string | string[], alt: string }) {
 export type TeamBrochurePhotoProps = {
     smes: SME[];
     team_photo_names: string | string[] | string[][];
-    team_photo_url: string | string[]; // Supports alternate URLs as fallbacks.
+    team_photo_url: string;
 }
 export function TeamBrochurePhoto( props: TeamBrochurePhotoProps ) {
     return (
         <div className="team-figure">
             <figure>
-                <DefaultImage src={props.team_photo_url} alt="Team Photo" />
+                {/* <DefaultImage src={props.team_photo_url} alt="Team Photo" /> */}
+                <img src={props.team_photo_url} alt="Team Photo"/>
                 <figcaption className="text-[#76777A] text-md font-normal">
                     <p>{props.team_photo_names}</p>
                     <p>{`SME: ${props.smes.map(sme => `${sme.title} ${sme.firstName} ${sme.lastName}`).join(', ')}`}</p>
@@ -74,10 +119,12 @@ export function TeamChallenge( props: { project_summary: string } ) {
 
 export function TeamMemberInfo( props: TeamMember ) {
     return (<>
-        <div className="text-[#008891] text-2xl font-bold font-sans underline">
-            {`${props.firstName} ${props.lastName}`} <span className="text-[#939598] text-xl underline font-mono">{`${props.hometown}, ${props.StateOrCountry}`}</span>
+        <div className='flex flex-row space-x-3 items-end'>
+            <span className="text-[#008891] text-4xl font-bold font-sans">{`${props.firstName} ${props.lastName}`}</span>
+            <span className="text-[#939598] text-lg font-mono">{`${props.hometown}, ${props.StateOrCountry}`}</span>
         </div>
-        <div className="pt-2 text-[#F57F28] text-lg font-bold">{props.degree}, {props.major}</div>
+        <div className="my-2 w-full border-b-2 border-orange-500 rounded"></div>
+        <div className="-mt-2 text-[#F57F28] text-lg font-bold">{props.degree}, {props.major}</div>
         <div className="pt-2 text-[#231F20] text-xl font-sans font-bold">
             Aspirations: <span className="text-[#231F20] text-lg font-serif font-normal">{props.aspiration}</span>
         </div>
@@ -102,15 +149,54 @@ export function TeamMembers( props: { team_members: TeamMember[] } ) {
 
 
 export function TeamProjectSponsors( props: { sponsors: Sponsor[] } ) {
+    const prefix: string = (props.sponsors.length === 0) ? 'PROJECT SPONSOR' : 'PROJECT SPONSORS';
     return (<>
         <div className="text-[#939598] text-center">
-            PROJECT SPONSOR: <span className="text-[#83003F]">{props.sponsors.map(sponsor => `${sponsor.title} ${sponsor.firstName} ${sponsor.lastName}`).join(', ')}</span>
+            {prefix}: <span className="text-[#83003F]">{props.sponsors.map(sponsor => `${sponsor.title} ${sponsor.firstName} ${sponsor.lastName}`).join(', ')}</span>
         </div>
     </>);
 }
 
 
+
+function embedFileUrlPowerpoint(url: string): string {
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${url}`;
+}
+
+
+export function EmbedFileUrl( props: { url: string, className?: string, children?: any} ) {
+
+    // Embed PowerPoint file using Microsoft online embedding URL.
+    if (props.url.includes('.ppt') || props.url.includes('.pptx')) {
+        return (<>
+            <iframe src={embedFileUrlPowerpoint(props.url)} width="100%" height="100%" className={props.className !== undefined ? props.className : ''}>
+                {props.children}
+            </iframe>
+        </>);
+    } 
+    // Embed PDF using custom view query parameters.
+    else if (props.url.includes('.pdf')) {
+        return (<>
+            <object data={`${props.url}#view=FitV&toolbar=1&navpanes=1`} type="application/pdf" width="100%" height="100%" className={props.className !== undefined ? props.className : ''}>
+                {props.children}
+            </object>
+        </>);
+    }
+    // Embed everything else as an `object` tag with no special property type.
+    else {
+        return (<>
+            <object data={props.url} width="100%" height="100%" className={props.className !== undefined ? props.className : ''}>
+                {props.children}
+            </object>
+        </>);
+    }
+}
+
+
 export default function TeamBrochure( props: Team ) {
+
+    console.log(`[${props.teamShortName}] poster URLs: ${JSON.stringify(props.posterUrl)}`)
+
     return (<>
         <div className="p-5 grid grid-cols-1 gap-4">
 
@@ -135,6 +221,29 @@ export default function TeamBrochure( props: Team ) {
             {/* Sponsor information */}
             <div>
                 <TeamProjectSponsors sponsors={props.sponsors}/>
+            </div>
+
+            <div className='pt-5'>
+                <div className='flex flex-row space-x-8'>
+                    <div className='flex flex-col w-1/2 h-[600px]'>
+                        <div className='text-4xl font-bold text-center text-[#231F20]'>Poster</div>
+                        <EmbedFileUrl url={props.posterUrl}>
+                            <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
+                                <p>We're sorry, but the file could not be displayed</p>
+                                <a href={props.posterUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                            </div>
+                        </EmbedFileUrl>
+                    </div>
+                    <div className='flex flex-col w-1/2 h-[600px]'>
+                        <div className='text-4xl font-bold text-center text-[#231F20]'>Presentation</div>
+                        <EmbedFileUrl url={props.presentationUrl}>
+                            <div className='flex flex-col text-center justify-center bg-slate-100 w-[100%] h-[100%]'>
+                                <p>We're sorry, but the file could not be displayed</p>
+                                <a href={props.posterUrl} target="_blank" rel="noopener noreferrer" className='text-blue-600 underline'>Open file in new window</a>
+                            </div>
+                        </EmbedFileUrl>
+                    </div>
+                </div>
             </div>
         </div>
     </>);
