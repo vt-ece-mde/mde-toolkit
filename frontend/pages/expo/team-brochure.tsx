@@ -137,7 +137,7 @@ const parseDriveFile = async (id: string, mimeType: string): Promise<string|stri
 }
 
 
-const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam> => {
+const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: string = './'): Promise<ParsedTeam> => {
     if (folder.id) {
         const files = await driveGetFolderChildren(folder.id);
 
@@ -259,7 +259,9 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
             
             // Build URLs to images and other shareable content.
             if (teamFiles.teamPhoto![0].id) {
-                parsedTeamContent.teamPhoto = `./${teamFiles.teamPhoto![0].name}`
+                parsedTeamContent.teamPhoto = `${rootFileEmbedUrl}/${teamFiles.teamPhoto![0].name}`;
+                parsedTeamContent.teamPhoto = parsedTeamContent.teamPhoto.replace(/([^:]\/)\/+/g, "$1"); // Remove extra slashes.
+                parsedTeamContent.teamPhoto = encodeURI(parsedTeamContent.teamPhoto); // Safely encode URL string.
                 // parsedTeamContent.teamPhoto = [
                 //     `https://drive.google.com/uc?` + new URLSearchParams({
                 //         export: 'view',
@@ -271,7 +273,9 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
                 parsedTeamContent.teamPhoto = ''; // Default to empty string.
             }
             if (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation![0].id) {
-                parsedTeamContent.teamPresentation = `./${teamFiles.teamPresentation![0].name}`;
+                parsedTeamContent.teamPresentation = `${rootFileEmbedUrl}/${teamFiles.teamPresentation![0].name}`;
+                parsedTeamContent.teamPresentation = parsedTeamContent.teamPresentation.replace(/([^:]\/)\/+/g, "$1"); // Remove extra slashes.
+                parsedTeamContent.teamPresentation = encodeURI(parsedTeamContent.teamPresentation); // Safely encode URL string.
                 // parsedTeamContent.teamPresentation = [
                 //     `https://drive.google.com/uc?` + new URLSearchParams({
                 //         export: 'view',
@@ -284,7 +288,9 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File): Promise<ParsedTeam
                 parsedTeamContent.teamPresentation = ''; // Default to empty string.
             }
             if (teamFiles.teamPoster !== undefined && teamFiles.teamPoster![0].id) {
-                parsedTeamContent.teamPoster = `./${teamFiles.teamPoster![0].name}`;
+                parsedTeamContent.teamPoster = `${rootFileEmbedUrl}/${teamFiles.teamPoster![0].name}`;
+                parsedTeamContent.teamPoster = parsedTeamContent.teamPoster.replace(/([^:]\/)\/+/g, "$1"); // Remove extra slashes.
+                parsedTeamContent.teamPoster = encodeURI(parsedTeamContent.teamPoster); // Safely encode URL string.
                 // parsedTeamContent.teamPoster = [
                 //     `https://drive.google.com/uc?` + new URLSearchParams({
                 //         export: 'view',
@@ -384,6 +390,22 @@ const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> 
 }
 
 
+
+interface FormInputs { 
+    webserver_host: string;
+    webserver_root: string;
+    webserver_parent: string;
+    webserver_htmlfilename: string;
+}
+
+const defaultFormInputs: FormInputs = {
+    webserver_host: 'https://mdeprojects.ece.vt.edu/',
+    // webserver_root: '<root-path>', // use '' for local.
+    webserver_root: 'expo/', // use '' for local.
+    webserver_parent: '<team-name>', // or './' for local
+    webserver_htmlfilename: 'team_page.html',
+}
+
 interface ParsedTeam {
     team?: Team,
     root?: drive_v3.Schema$File,
@@ -396,6 +418,7 @@ type State = {
     pickedFolders: drive_v3.Schema$File[];
     teams: Map<string, ParsedTeam>;
     selectedTeamToDisplay: string;
+    formInputs: FormInputs;
 }
 const defaultState: State = { 
     fetching: false,
@@ -403,6 +426,7 @@ const defaultState: State = {
     pickedFolders: [],
     teams: new Map<string, ParsedTeam>(),
     selectedTeamToDisplay: '', // Empty for undefined, teams key string for defined.
+    formInputs: defaultFormInputs,
 }
 
 type Action =
@@ -439,6 +463,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         pickedFolders,
         teams,
         selectedTeamToDisplay,
+        formInputs,
     }, dispatch] = useReducer(reducer, defaultState)
 
     const access_token = session?.access_token;
@@ -446,6 +471,10 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
     const [openPicker, authResponse] = useDrivePicker();
 
+
+
+    const [liveFormInputs, setLiveFormInputs] = useState<FormInputs>(defaultFormInputs);
+    const [liveFormInputAcknowledgementState, setLiveFormInputAcknowledgementState] = useState<number>(0);
 
 
     const runParsingAlgorithm = useCallback(async (folders: drive_v3.Schema$File[]) => {
@@ -469,14 +498,16 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         // Async parse team folders.
         // For each folder, add the parsed team to the state.
         folders.map(async (folder) => {
-            const { team, status } = await parseTeamFolder(folder);
+            var rootFileEmbedUrl: string = `${formInputs.webserver_host}/${formInputs.webserver_root.includes('<root-path>') ? '' : formInputs.webserver_root}/${formInputs.webserver_parent.includes('<team-name>') ? folder.name : formInputs.webserver_parent}/`;
+            rootFileEmbedUrl = rootFileEmbedUrl.replace(/([^:]\/)\/+/g, "$1"); // Remove extra slashes.
+            const { team, status } = await parseTeamFolder(folder, rootFileEmbedUrl);
             dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
         })
 
         dispatch({ type: 'update-state', state: {
             fetching: false,
         }});
-    }, [pickedFolders])
+    }, [pickedFolders, formInputs])
 
 
     useEffect(() => {
@@ -485,6 +516,18 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             runParsingAlgorithm(pickedFolders);
         }
     }, [pickedFolders, runParsingAlgorithm]);
+
+
+    useEffect(() => {
+        const duration = 1000;
+        if (liveFormInputAcknowledgementState === 1) {
+            const timerId = setInterval(() => setLiveFormInputAcknowledgementState(2), duration); // Set to 'fading' state.
+            setTimeout(() => {
+                clearInterval(timerId);
+                setLiveFormInputAcknowledgementState(0); // Reset to initial.
+            }, duration); // Turn off interval after about the first occurrence.
+        }
+    }, [liveFormInputAcknowledgementState]);
 
 
 
@@ -553,7 +596,11 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
         // Create file blob to upload.
         const file = new Blob([html], {type: 'text/html'});
         // const name = `team_page-${team.teamShortName}.html`; // This is what the file will be named in Drive.
-        const name = `team_page.html`; // This is what the file will be named in Drive.
+        // const name = `team_page.html`; // This is what the file will be named in Drive.
+        var name = formInputs.webserver_htmlfilename;
+        name = name.replaceAll('<team-name>', team.teamShortName); // Replace team name shortcut.
+        // const name = `${webserver_htmlfilename.includes('<team-name>') ? webserver_htmlfilename.replaceAll('<team-name>', team.teamShortName) : webserver_htmlfilename}`
+        // const name = `team_page${webserver_htmlfilename.includes('<team-name>') ? team.teamShortName : ''}.html`; // This is what the file will be named in Drive.
         const parents = [root.id!]; // This is the parent folder.
 
         // First, check if the file exists (using name as the identifier) at the given root directory.
@@ -662,7 +709,10 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             setParentFolder: parentId,
         })
     }
-
+    // webserver_host: 'https://mdeprojects.ece.vt.edu/',
+    // webserver_root: '', // use '' for local.
+    // webserver_parent: '<team-dir>', // or './' for local
+    // webserver_htmlfilename: 'team_page.html',
 
     return (<>
         <div className='flex flex-col items-center justify-center pt-4'>
@@ -676,8 +726,50 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                 </svg>
             </div>
 
-            {/* Button to open Google Drive picker */}
-            <button onClick={ _ => handleOpenPicker() } className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" disabled={ fetching }>Open Google Drive Picker</button>
+            <div className='pb-4'>
+                {/* Button to open Google Drive picker */}
+                <button onClick={ _ => handleOpenPicker() } className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" disabled={ fetching }>Open Google Drive Picker</button>
+            </div>
+
+            <div className='pb-4 flex flex-col items-center justify-center'>
+                <div className='mb-1'>You can manually override the embed URL paths and HTML filename here.</div>
+                <div className='mb-4'>Note that for the updated values to take effect, you must parse again using the button at right.</div>
+                <div>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        console.log(`Setting form inputs: ${JSON.stringify(liveFormInputs)}`);
+                        dispatch({ type: 'update-state', state: {
+                            formInputs: liveFormInputs,
+                        }});
+                        setLiveFormInputAcknowledgementState(1); // Set to 'clicked'.
+                    }}>
+                        <div className='flex flex-row items-center space-x-0.5'>
+                            <input className='border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 p-1' type="text" placeholder={liveFormInputs.webserver_host} value={liveFormInputs.webserver_host} onChange={e => setLiveFormInputs(fi => ({ ...fi, webserver_host: e.target.value }))} />
+                            <p>/</p>
+                            <input className='border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-1' type="text" placeholder={liveFormInputs.webserver_root} value={liveFormInputs.webserver_root} onChange={e => setLiveFormInputs(fi => ({ ...fi, webserver_root: e.target.value }))} />
+                            <p>/</p>
+                            <input className='border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-1' type="text" placeholder={liveFormInputs.webserver_parent} value={liveFormInputs.webserver_parent} onChange={e => setLiveFormInputs(fi => ({ ...fi, webserver_parent: e.target.value }))} />
+                            <p>/</p>
+                            <input className='border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-1' type="text" placeholder={liveFormInputs.webserver_htmlfilename} value={liveFormInputs.webserver_htmlfilename} onChange={e => setLiveFormInputs(fi => ({ ...fi, webserver_htmlfilename: e.target.value }))} />
+                            <button type="submit" className="bg-yellow-500 hover:bg-yellow-700 disabled:bg-slate-400 disabled:text-slate-100 text-white font-bold py-1 px-2 ml-2 rounded flex flex-row">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 -ml-1 mr-2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
+                                </svg>
+                                Use updated values
+                            </button>
+
+                            {liveFormInputAcknowledgementState !== 0 ? (
+                                <div className={`flex flex-row pl-3 transition-all duration-200 ${liveFormInputAcknowledgementState === 2 ? "opacity-0" : "opacity-100"}`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1 stroke-green-500">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                    </svg>
+                                    <p>OK</p>
+                                </div>
+                            ) : (null)}
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             {/* Loading spinner */}
             { fetching ? (<>
