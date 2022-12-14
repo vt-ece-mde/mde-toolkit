@@ -224,10 +224,10 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
             && (teamFiles.teamSponsorNames.length === 1)
             && (teamFiles.teamSMENames !== undefined)
             && (teamFiles.teamSMENames.length === 1)
-            // && (teamFiles.teamPresentation !== undefined)
-            // && (teamFiles.teamPresentation.length === 1)
-            // && (teamFiles.teamPoster !== undefined)
-            // && (teamFiles.teamPoster.length === 1)
+            && (teamFiles.teamPresentation !== undefined)
+            && (teamFiles.teamPresentation.length === 1)
+            && (teamFiles.teamPoster !== undefined)
+            && (teamFiles.teamPoster.length === 1)
             && (teamFiles.teamProjectSummary !== undefined)
             && (teamFiles.teamProjectSummary.length === 1);
         if (validTeam) {
@@ -319,6 +319,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
                     parsedTeamContent.teamPoster!,
                     parsedTeamContent.teamPhotoNames!,
                 )
+
                 return {
                     team: team,
                     root: folder,
@@ -350,10 +351,10 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
             message += (teamFiles.teamSponsorNames !== undefined && teamFiles.teamSponsorNames.length > 1) ? `\n- Multiple files found for team sponsor names: ${JSON.stringify(teamFiles.teamSponsorNames.map(file => file.name))}` : '';
             message += (teamFiles.teamSMENames === undefined) ? '\n- Missing team SME names' : '';
             message += (teamFiles.teamSMENames !== undefined && teamFiles.teamSMENames.length > 1) ? `\n- Multiple files found for team SME names: ${JSON.stringify(teamFiles.teamSMENames.map(file => file.name))}` : '';
-            // message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
-            // message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? `\n- Multiple files found for team presentation: ${JSON.stringify(teamFiles.teamPresentation.map(file => file.name))}` : '';
-            // message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
-            // message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? `\n- Multiple files found for team poster: ${JSON.stringify(teamFiles.teamPoster.map(file => file.name))}` : '';
+            message += (teamFiles.teamPresentation === undefined) ? '\n- Missing team presentation' : '';
+            message += (teamFiles.teamPresentation !== undefined && teamFiles.teamPresentation.length > 1) ? `\n- Multiple files found for team presentation: ${JSON.stringify(teamFiles.teamPresentation.map(file => file.name))}` : '';
+            message += (teamFiles.teamPoster === undefined) ? '\n- Missing team poster' : '';
+            message += (teamFiles.teamPoster !== undefined && teamFiles.teamPoster.length > 1) ? `\n- Multiple files found for team poster: ${JSON.stringify(teamFiles.teamPoster.map(file => file.name))}` : '';
             message += (teamFiles.teamProjectSummary === undefined) ? '\n- Missing team project summary' : '';
             message += (teamFiles.teamProjectSummary !== undefined && teamFiles.teamProjectSummary.length > 1) ? `\n- Multiple files found for team project summary: ${JSON.stringify(teamFiles.teamProjectSummary.map(file => file.name))}` : '';
             return {
@@ -706,7 +707,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             supportDrives: true,
             multiselect: true,
             callbackFunction: handlePickerSelection,
-            setParentFolder: parentId,
+            // setParentFolder: parentId, // Set the parent folder to make subsequent calls quicker.
         })
     }
     // webserver_host: 'https://mdeprojects.ece.vt.edu/',
@@ -714,8 +715,51 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
     // webserver_parent: '<team-dir>', // or './' for local
     // webserver_htmlfilename: 'team_page.html',
 
+    const onKeyUp = useCallback((e: any) => {
+
+    }, []);
+
+    const onKeyDown = useCallback((e: any) => {
+        const n = pickedFolders.length;
+        if (n > 0) {
+
+            // Get index of currently selected folder if there is one.
+            const currentSelectedFolderIndex = pickedFolders.findIndex(folder => folder.id === selectedTeamToDisplay);
+
+            // Increment to next folder.
+            if (e.key === 'ArrowRight') {
+                const nextIndex = currentSelectedFolderIndex+1;
+                if (nextIndex < n) {
+                    dispatch({ type: 'update-state', state: {
+                        selectedTeamToDisplay: pickedFolders[nextIndex].id!,
+                    }});
+                }
+            }
+            // Decrement to previous folder.
+            else if (e.key === 'ArrowLeft') {
+                const nextIndex = currentSelectedFolderIndex-1;
+                if (nextIndex >= 0) {
+                    dispatch({ type: 'update-state', state: {
+                        selectedTeamToDisplay: pickedFolders[nextIndex].id!,
+                    }});
+                }
+            }
+        }
+    }, [pickedFolders, selectedTeamToDisplay]);
+
+    // Add event listeners
+    useEffect(() => {
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp)
+        // Remove event listeners on cleanup
+        return () => {
+            window.removeEventListener('keydown', onKeyDown)
+            window.removeEventListener('keyup', onKeyUp)
+        }
+    }, [onKeyUp, onKeyDown]) // Empty array ensures that effect is only run on mount and unmount
+
     return (<>
-        <div className='flex flex-col items-center justify-center pt-4'>
+        <div className='flex flex-col items-center justify-center pt-4' onKeyDown={onKeyDown}>
 
             {/* Title with instruction text */}
             <div className='text-6xl font-bold mb-4'>Team Brochure HTML Page Generator</div>
@@ -733,7 +777,7 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
 
             <div className='pb-4 flex flex-col items-center justify-center'>
                 <div className='mb-1'>You can manually override the embed URL paths and HTML filename here.</div>
-                <div className='mb-4'>Note that for the updated values to take effect, you must parse again using the button at right.</div>
+                <div className='mb-4'>For the updated values to take effect, you <span className='underline'>must</span> click the <span className='font-bold'>"Use updated values"</span> button.</div>
                 <div>
                     <form onSubmit={(e) => {
                         e.preventDefault();
@@ -771,6 +815,17 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                 </div>
             </div>
 
+            <div className='pb-2 flex flex-col items-center justify-center'>
+                <div className='mb-1'><span className='font-bold underline'>Note 1</span>:</div>
+                <div className='mb-1'>To reset all options, it is best to <span className='font-bold'>reload</span> the page.</div>
+                
+            </div>
+
+            <div className='pb-4 flex flex-col items-center justify-center'>
+                <div className='mb-1'><span className='font-bold underline'>Note 2</span>:</div>
+                <div className='mb-1'>When the files are loaded, you can use the <span className='font-bold'>left</span> and <span className='font-bold'>right</span> arrow keys to navigate between team pages.</div>
+            </div>
+
             {/* Loading spinner */}
             { fetching ? (<>
                 <div className='flex items-center justify-center'>
@@ -789,14 +844,18 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                         <table className='table-fixed border-separate border-spacing-y-2 border-spacing-x-3'>
                             <thead className='text-xl font-bold'>
                                 <tr>
+                                    <td>Row Index</td>
                                     <td>Team Folder</td>
                                     <td>Status</td>
                                     <td>Links</td>
                                 </tr>
                             </thead>
                             <tbody>
-                                {pickedFolders.map(folder => <>
+                                {pickedFolders.map((folder, index) => <>
                                     <tr className='odd:bg-white even:bg-slate-100'>
+                                        <td className='text-center'>
+                                            <p>{index+1}</p>
+                                        </td>
                                         <td>
                                             <p>{folder.name}</p>
                                         </td>
@@ -958,8 +1017,28 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
                 <div>
                     {(() => {
                         if (selectedTeamToDisplay.length > 0) {
-
-                            return <TeamDisplayArea parentFolder={pickedFolders.find(folder => folder.id! === selectedTeamToDisplay)} pt={teams.get(selectedTeamToDisplay)}/>
+                            const index = pickedFolders.findIndex(folder => folder.id! === selectedTeamToDisplay)
+                            if (index >= 0) {
+                                const folder = pickedFolders[index];
+                                return (<>
+                                    <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
+                                    <div className='text-center items-center justify-center text-lg pb-2 flex flex-row space-x-2'>
+                                        <span className='font-bold'>Viewing team:</span>
+                                        <span>{folder.name!}</span>
+                                        <a className='flex flex-row group relative' href={`https://drive.google.com/drive/u/1/folders/${folder.id}`} target="_blank" rel="noopener noreferrer">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                                                    <path fillRule="evenodd" d="M19.902 4.098a3.75 3.75 0 00-5.304 0l-4.5 4.5a3.75 3.75 0 001.035 6.037.75.75 0 01-.646 1.353 5.25 5.25 0 01-1.449-8.45l4.5-4.5a5.25 5.25 0 117.424 7.424l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3.75 3.75 0 000-5.304zm-7.389 4.267a.75.75 0 011-.353 5.25 5.25 0 011.449 8.45l-4.5 4.5a5.25 5.25 0 11-7.424-7.424l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3.75 3.75 0 105.304 5.304l4.5-4.5a3.75 3.75 0 00-1.035-6.037.75.75 0 01-.354-1z" clipRule="evenodd" />
+                                                </svg>
+                                                {/* Open */}
+                                                <span className="absolute hidden group-hover:flex -left-5 -top-2 -translate-y-full w-36 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm after:content-[''] after:absolute after:left-1/4 after:top-[100%] after:-translate-x-1/2 after:border-8 after:border-x-transparent after:border-b-transparent after:border-t-gray-700 hover:invisible">
+                                                    Link to Google Drive Folder
+                                                </span>
+                                            </a>
+                                    </div>
+                                    <div className='text-center text-lg'>{index+1} of {pickedFolders.length}</div>
+                                    <TeamDisplayArea parentFolder={folder} pt={teams.get(selectedTeamToDisplay)}/>
+                                </>);
+                            }
                         }
                     })()}
                 </div>
@@ -988,13 +1067,11 @@ function MultilineParagraph(props: { text: string, className?: string }) {
 function TeamDisplayArea(props: { parentFolder?: drive_v3.Schema$File, pt?: ParsedTeam }) {
     if (props.pt?.status.ok !== undefined) {
         return (<>
-            <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
             <TeamBrochure {...props.pt.team!} />
         </>);
     }
     else if (props.pt?.status.error !== undefined) {
         return (<>
-            <hr className="my-4 h-1 bg-gray-100 rounded border-0 md:my-10 dark:bg-gray-700" />
             <div className="flex flex-column">
                 <div className='flex flex-row pb-3'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 fill-red-500 stroke-current text-white">
