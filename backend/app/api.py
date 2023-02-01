@@ -1,10 +1,9 @@
 from urllib import response
 from canvasapi import Canvas
-from fastapi import Depends, FastAPI, Request, Query
+from fastapi import Depends, FastAPI, Request, Query, BackgroundTasks
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
-from starlette.background import BackgroundTask
 import json
 from . import mdetk
 import os
@@ -12,6 +11,13 @@ from pathlib import Path
 import shutil
 import tempfile
 import zipfile
+from uuid import UUID, uuid4
+from dataclasses import dataclass, field
+import traceback
+import logging
+from datetime import datetime
+
+# logging.basicConfig(level=logging.DEBUG)
 
 api = FastAPI()
 
@@ -25,6 +31,33 @@ api.add_middleware(
 )
 
 auth_scheme = HTTPBearer()
+
+@dataclass
+class Job:
+    uid: UUID = field(default_factory=uuid4)
+    status: str = 'working'
+    result: object = None
+    updatetime: datetime = field(default_factory=datetime.now)
+
+# Dictionary of running jobs and their results.
+jobs: dict[UUID, Job] = {}
+
+
+def clean_job(job: Job) -> dict:
+    return dict(uid=job.uid, status=job.status, updatetime=job.updatetime)
+
+
+def run_job(uid: UUID, target, *args, **kwargs) -> None:
+    try:
+        jobs[uid].result = target(*args, **kwargs)
+        jobs[uid].status = 'done'
+        jobs[uid].updatetime = datetime.now()
+    except Exception as e:
+        jobs[uid].status = 'error'
+        jobs[uid].result = e
+        jobs[uid].updatetime = datetime.now()
+        print(f"An error occurred when running job {uid}: {e}", flush=True)
+        traceback.print_exc()
 
 
 async def get_canvas_instance(
@@ -51,6 +84,70 @@ async def root():
 @api.get("/test")
 async def test():
     return {"message": "This is a test"}
+
+
+@api.get("/job/{uid}/status")
+async def job_status_handler(uid: UUID) -> dict:
+    """Get the status of a specific job."""
+    if uid in jobs:
+        return clean_job(jobs[uid])
+    else:
+        return {'error': 'no job exists'}
+
+@api.get("/job/{uid}/result")
+async def job_result_handler(uid: UUID) -> Job|dict:
+    """Get the result of a specific job."""
+    if uid in jobs:
+        if jobs[uid].status == 'working':
+            return {'error': 'job is still working'}
+        else:
+            return jobs.pop(uid) # Remove job if not in working status.
+    else:
+        return {'error': 'no job exists'}
+
+@api.get("/job/{uid}/delete")
+async def job_delete_handler(uid: UUID) -> dict:
+    """Remove a specific job from the queue."""
+    if uid in jobs:
+        del jobs[uid]
+        return {'uid': uid}
+    else:
+        return {'error': 'no job exists'}
+
+@api.get("/job/list")
+async def job_list_handler() -> Job:
+    """Get list of all jobs."""
+    return [clean_job(job) for _,job in jobs.items()]
+
+@api.get("/job/prune")
+async def job_prune_handler() -> Job:
+    """Remove all finished jobs from the queue."""
+    for uid in jobs.keys():
+        if jobs[uid].status != 'working':
+            del jobs[uid]
+
+
+@api.post("/job/create")
+async def job_create_handler(background_tasks: BackgroundTasks) -> dict:
+    """Testing endpoint to create a timed job."""
+
+    def worker(key: UUID):
+        import time
+        for _ in range(10):
+            time.sleep(1)
+            jobs[key].updatetime = datetime.now()
+
+    # Create new job.
+    new_job = Job()
+    jobs[new_job.uid] = new_job
+
+    # Enqueue background task to generate IPR history spreadsheet.
+    background_tasks.add_task(run_job, uid=new_job.uid, target=worker,
+        key=new_job.uid,
+    )
+
+    return clean_job(new_job)
+
 
 
 @api.get("/courses")
@@ -123,55 +220,76 @@ async def students(
     return ret
 
 
-@api.get("/courses/{course_id}/ipr-history-spreadsheet")
-async def ipr_history_spreadsheet(
+@api.post("/courses/{course_id}/ipr-history-spreadsheet")
+async def new_ipr_history_spreadsheet(
     course_id: str,
     n_feedback: int,
+    background_tasks: BackgroundTasks,
     assignment_id: list[str] = Query(), # Using `Query()` is required here to recognize the list type.
     delimiter: str = '|',
     sort_key: str = 'group_name',
     canvas: Canvas = Depends(get_canvas_instance),
     ) -> list[dict]:
 
-    # Obtain list of courses using optional ID filter.
-    course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
+    def worker(
+        canvas_api_url: str,
+        canvas_api_token: str,
+        course_id: int,
+        assignment_id: int|list[int], # List of assignment IDs for URL linking.
+        n_feedback: int, # Number of IPR feedback rounds.
+        delimiter: str = ',',
+        sort_key: str = 'group_name',
+        ):
 
-    # Convert assignment IDs to integer or parse from URL.
-    assignment_id = [
-        mdetk.parse_value_or_url(aid, int, 'assignments') for aid in assignment_id
-    ]
+        canvas = Canvas(canvas_api_url, canvas_api_token)
 
-    print(f"{course_id=}")
-    print(f"{n_feedback=}")
-    print(f"{assignment_id=}")
+        # Obtain list of courses using optional ID filter.
+        course_id = mdetk.parse_value_or_url(course_id, int, 'courses')
 
-    gen = mdetk.generate_ipr_history_spreadsheet(
-        canvas=canvas,
+        # Convert assignment IDs to integer or parse from URL.
+        assignment_id = [
+            mdetk.parse_value_or_url(aid, int, 'assignments') for aid in assignment_id
+        ]
+
+        print(f"{course_id=}", flush=True)
+        print(f"{n_feedback=}", flush=True)
+        print(f"{assignment_id=}", flush=True)
+
+        gen = mdetk.generate_ipr_history_spreadsheet(
+            canvas=canvas,
+            course_id=course_id,
+            assignment_id=assignment_id,
+            n_feedback=n_feedback,
+            delimiter=delimiter,
+            sort_key=sort_key,
+            # outfile=sys.stdout,
+        )
+        print(f'building generator...', flush=True)
+        x = list(gen)
+        print(f'building generator...done {len(x)}', flush=True)
+
+        return x
+
+    # Create new job.
+    new_job = Job()
+    jobs[new_job.uid] = new_job
+
+    # Isolate Canvas API details from token.
+    canvas_api_url=canvas._Canvas__requester.original_url
+    canvas_api_token=canvas._Canvas__requester.access_token
+
+    # Enqueue background task to generate IPR history spreadsheet.
+    background_tasks.add_task(run_job, uid=new_job.uid, target=worker,
         course_id=course_id,
-        assignment_id=assignment_id,
         n_feedback=n_feedback,
+        assignment_id=assignment_id,
         delimiter=delimiter,
         sort_key=sort_key,
-        # outfile=sys.stdout,
+        canvas_api_url=canvas_api_url,
+        canvas_api_token=canvas_api_token,
     )
-    return list(gen)
 
-
-    # # Get course from ID.
-    # course = canvas.get_course(course_id)
-    
-    # # Get generator of groups.
-    # gen = course.get_users(enrollment_type=['student'])
-
-    # # Build list of groups.
-    # ret = [
-    #     {
-    #         "name": user.name,
-    #         "sortable_name": user.sortable_name,
-    #         "id": user.id,
-    #     } for user in gen
-    #     ]
-    # return ret
+    return clean_job(new_job)
 
 
 def remove_dir(path: str|Path):
@@ -224,7 +342,7 @@ async def create_expo_team_dirs(
         response = FileResponse(zipped_path,
             media_type="application/x-zip-compressed",
             filename=zipped_filename,
-            background=BackgroundTask(shutil.rmtree, tmpdir),
+            background=BackgroundTasks(shutil.rmtree, tmpdir),
         )
         return response
 
