@@ -122,6 +122,7 @@ def get_users_by_group(canvas: Canvas, course_id: int) -> Tuple[Dict[int,User],D
     logger.debug("Filtered to %d groups", len(groups))
 
     # Match groups to students.
+    # Note: This can take a long time because the Canvas API is synchronous.
     students = {}
     student_to_group = {}
     for _, g in groups.items():
