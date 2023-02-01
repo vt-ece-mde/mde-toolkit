@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useId, useState } from "react";
 import Link from "next/link";
 
 import getConfig from 'next/config';
@@ -171,6 +171,26 @@ const isURL = (s: string) => {
     }
 }
 
+// Gleaned from: https://levelup.gitconnected.com/polling-in-javascript-ab2d6378705a
+const poll = async ({ fn, validate, interval, maxAttempts}: { fn: () => Promise<any>, validate: (result: any) => boolean, interval: number, maxAttempts?: number}) => {
+    let attempts = 0;
+
+    const executePoll = async (resolve: (result: any) => any, reject: (result: any) => any) => {
+        const result = await fn();
+        attempts++;
+
+        if (validate(result)) {
+            return resolve(result);
+        } else if (maxAttempts && attempts === maxAttempts) {
+            return reject(new Error('Exceeded max attempts'));
+        } else {
+            setTimeout(executePoll, interval, resolve, reject);
+        }
+    }
+
+    return new Promise(executePoll);
+}
+
 
 export default function IprHistorySpreadsheet() {
     
@@ -193,6 +213,7 @@ export default function IprHistorySpreadsheet() {
 
     /* Fetch content based on form data. */
     useEffect(() => {
+
         const getContent = async (data: FormData) => {
             setIsFetching(true); // Enable fetch state.
 
@@ -202,16 +223,36 @@ export default function IprHistorySpreadsheet() {
                 ...data.assignment_ids.map(s => ['assignment_id', String(s)]),
             ]);
 
-            // Make API call.
-            // const res = await fetch(`${API_URI}/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
-            const res = await fetch(`/api/mde/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
+            // Enqueue generation and get UUID.
+            fetch(`/api/mde/courses/${data.course_id}/ipr-history-spreadsheet?${params}`, {
+                method: 'POST',
                 headers: {Authorization: `Bearer ${CANVAS_API_TOKEN}`},
-            })
-            const contentList = await res.json();
-            console.log(JSON.stringify(contentList));
-
-            setContentList(contentList); // Set content list.
-            setIsFetching(false); // Disable fetch state.
+                })
+                .then((response) => response.json())
+                .then(({ uid }) => {
+                    // Poll API server for job status periodically.
+                    // Once polling is complete, fetch result.
+                    console.log(`job create uid: ${uid}`)
+                    poll({
+                        fn: async () => await (await fetch(`/api/mde/job/${uid}/status`)).json(),
+                        validate: ({uid, status, updatetime}) => {
+                            console.log(`status for ${uid}: ${status} @ ${updatetime}`);
+                            return status !== 'working';
+                        },
+                        interval: 1000,
+                        })
+                        .then(async ({ uid }) => {
+                            const res = await fetch(`/api/mde/job/${uid}/result`);
+                            if (res.ok) {
+                                const { result } = await res.json();
+                                console.log(JSON.stringify(result));
+                                setContentList(result); // Set content list.
+                                setIsFetching(false); // Disable fetch state.
+                            }
+                        })
+                        .catch(err => console.error(err))
+                })
+                .catch(console.error);
         }
 
         if (typeof formData !== 'undefined') {
