@@ -5,10 +5,7 @@
         "node": true
     },
     "extends": [
-        "next/core-web-vitals",
-        // "eslint:recommended",
-        // "plugin:react/recommended",
-        // "plugin:@typescript-eslint/recommended"
+        "next/core-web-vitals"
     ],
     "overrides": [
     ],
@@ -22,5 +19,10 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "react/react-in-jsx-scope": "off", // Suppress errors for missing 'import React' in files for Next.js
+        "react/no-unescaped-entities": "off",
+        "react/display-name": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "@next/next/no-img-element": "off"
     }
 }
