@@ -1,12 +1,12 @@
 # Install dependencies only when needed
-FROM node:18-alpine AS deps
+FROM node:19-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
 
 # Build stage.
-FROM node:18-alpine as builder
+FROM node:19-alpine as builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -14,7 +14,7 @@ RUN npm run build
 
 
 # Run stage.
-FROM node:18-alpine as runner
+FROM node:19-alpine as runner
 WORKDIR /app
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
