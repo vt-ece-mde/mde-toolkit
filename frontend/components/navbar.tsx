@@ -37,21 +37,25 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
                     <div className="flex space-x-2">
                         {/* (at left, left) Logo */}
                         <div className="py-4 px-3">
-                            <Link href="/">
-                                <a className="flex items-center text-gray-700 hover:text-gray-900">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 mr-1 fill-yellow-300">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                                    </svg>
-                                    <span className="font-bold">{ title }</span>
-                                </a>
+                            <Link href="/" className="flex items-center text-gray-700 hover:text-gray-900">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 mr-1 fill-yellow-300">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                </svg>
+                                <span className="font-bold">{ title }</span>
+
                             </Link>
                         </div>
 
                         {/* (at left, right) Primary nav */}
                         <div className="flex items-center space-x-2">
                             {menu_list.map((item, index) => (
-                                <Link key={ index } href={ item.href }>
-                                    <a className={`${item.active ? "active" : ""} py-4 px-1 text-gray-700 hover:text-gray-900`} aria-current="page">{ item.text }</a>
+                                <Link
+                                    key={ index }
+                                    href={ item.href }
+                                    className={`${item.active ? "active" : ""} py-4 px-1 text-gray-700 hover:text-gray-900`}
+                                    aria-current="page">
+                                    { item.text }
                                 </Link>
                             ))}
                         </div>
@@ -62,11 +66,14 @@ export default function Navbar({ title, menu_list }: NarbarProps ) {
 
                         {/* Show login button if not authenticated */}
                         { !session && (
-                            <Link href="/api/auth/signin">
-                                <a className="py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 hover:text-yellow-800 rounded transition duration-300" onClick={ e => {
+                            <Link
+                                href="/api/auth/signin"
+                                className="py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 hover:text-yellow-800 rounded transition duration-300"
+                                onClick={ e => {
                                     e.preventDefault()
                                     signIn()
-                                } }>Login</a>
+                                } }>
+                                Login
                             </Link>
                         )}
 
@@ -90,7 +97,7 @@ function UserDropdown({ session }: UserDropDownProps) {
     const router = useRouter();
 
     console.log(`session? ${JSON.stringify(session)}`)
-    return (<>
+    return <>
         <div>
             <Menu as="div" className="relative inline-block text-left">
                 <div>
@@ -134,21 +141,27 @@ function UserDropdown({ session }: UserDropDownProps) {
                     <div className="px-1 py-1 ">
                         <Menu.Item>
                             {({ active }) => (
-                                <Link href="/api/auth/signin">
-                                    <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-700" onClick={ e => {
+                                <Link
+                                    href="/api/auth/signin"
+                                    className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-700"
+                                    onClick={ e => {
                                         e.preventDefault()
                                         signIn("google", { callbackUrl: router.pathname })
-                                    } }>Switch Accounts</a>
+                                    } }>
+                                    Switch Accounts
                                 </Link>
                             )}
                         </Menu.Item>
                         <Menu.Item>
                             {({ active }) => (
-                                <Link href="/api/auth/signout">
-                                    <a className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-700" onClick={ e => {
+                                <Link
+                                    href="/api/auth/signout"
+                                    className="block px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-red-50 hover:text-red-700"
+                                    onClick={ e => {
                                         e.preventDefault()
                                         signOut({ callbackUrl: '/auth/signin?' + new URLSearchParams({ redirect: router.pathname })})
-                                    }}>Logout</a>
+                                    }}>
+                                    Logout
                                 </Link>
                             )}
                         </Menu.Item>
@@ -158,5 +171,5 @@ function UserDropdown({ session }: UserDropDownProps) {
                 </div>
             </Menu>
         </div>
-    </>);
+    </>;
 }
