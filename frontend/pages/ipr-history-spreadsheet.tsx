@@ -108,7 +108,7 @@ function Form(props: FormProps) {
         return (
             <div className="input-group mb-3" key={index}>
                 <span className="input-group-text">Assignment ID</span>
-                <select className="custom-select" id="assignment_selector" onChange={e => setAssignmentIdList(prev => {
+                <select aria-label="hello" className="custom-select" id="assignment_selector" onChange={e => setAssignmentIdList(prev => {
                         const tup: [number, number] = JSON.parse(e.target.value);
                         prev[tup[0]] = tup[1];
                         return prev;
