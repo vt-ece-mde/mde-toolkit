@@ -72,6 +72,8 @@ NEXTAUTH_URL=http://localhost:3000 # for development
 NEXTAUTH_SECRET=zzzzzzzzzz
 ```
 
+8. Under the "APIs & Services" menu "Oauth consent screen" tab you must manually add the email addresses of the users who will use this application. Note that the app codebase is manually configured to only allow `@vt.edu` addresses, so be sure to only add addresses which match this domain (see [NextAuth config file](frontend/pages/api/auth/[...nextauth].js)).
+
 ### Canvas Setup
 
 #### Basics
