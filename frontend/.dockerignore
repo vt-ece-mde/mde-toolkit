@@ -4,5 +4,5 @@
 **/Icon[\r]
 
 # NextJS hidden files and directories.
-node_modules
-.next
+node_modules/
+.next/
