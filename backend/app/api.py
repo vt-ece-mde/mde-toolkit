@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, Request, Query, BackgroundTasks
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
+from starlette.background import BackgroundTask
 import json
 from . import mdetk
 import os
@@ -68,7 +69,7 @@ async def get_canvas_instance(
     token = credentials.credentials
 
     # Create Canvas API instance.
-    CANVAS_API_URL = os.getenv('CANVAS_API_TOKEN', 'https://canvas.vt.edu')
+    CANVAS_API_URL = os.getenv('CANVAS_API_URL', 'https://canvas.vt.edu')
     CANVAS_API_TOKEN = os.getenv('CANVAS_API_TOKEN', token)
     print(f"{CANVAS_API_URL=}")
     print(f"{CANVAS_API_TOKEN=}")
@@ -342,7 +343,7 @@ async def create_expo_team_dirs(
         response = FileResponse(zipped_path,
             media_type="application/x-zip-compressed",
             filename=zipped_filename,
-            background=BackgroundTasks(shutil.rmtree, tmpdir),
+            background=BackgroundTask(shutil.rmtree, tmpdir),
         )
         return response
 
