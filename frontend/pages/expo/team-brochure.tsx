@@ -211,7 +211,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
 
         // Ensure that all team files have been set.
         // If any are missing then the team is invalid.
-        console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
+        // console.log(`teamFiles? ${JSON.stringify(teamFiles)}`)
         const validTeam = (teamFiles.teamTitle !== undefined)
             && (teamFiles.teamTitle.length === 1)
             && (teamFiles.teamPhoto !== undefined)
@@ -231,7 +231,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
             && (teamFiles.teamProjectSummary !== undefined)
             && (teamFiles.teamProjectSummary.length === 1);
         if (validTeam) {
-            console.log(`team is valid: ${folder.name}`)
+            // console.log(`team is valid: ${folder.name}`)
 
             // Team title.
             parsedTeamContent.teamTitle = await parseDriveFile(teamFiles.teamTitle![0].id!, teamFiles.teamTitle![0].mimeType!) as string;
@@ -283,7 +283,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
                 //     }),
                 //     `./${teamFiles.teamPresentation![0].name}`,
                 // ];
-                console.log(`Team presentation: ${JSON.stringify(parsedTeamContent.teamPresentation)}`)
+                // console.log(`Team presentation: ${JSON.stringify(parsedTeamContent.teamPresentation)}`)
             } else {
                 parsedTeamContent.teamPresentation = ''; // Default to empty string.
             }
@@ -303,7 +303,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
             }
 
 
-            console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
+            // console.log(`photoNames? ${JSON.stringify(parsedTeamContent.teamPhotoNames)}`)
 
             try {
                 const team: Team = buildTeamsFromCSVStrings(
@@ -337,7 +337,7 @@ const parseTeamFolder = async (folder: drive_v3.Schema$File, rootFileEmbedUrl: s
 
         }
         else {
-            console.log(`team is NOT valid: ${folder.name}`)
+            // console.log(`team is NOT valid: ${folder.name}`)
             var message = 'The team is not valid for the following reasons:';
             message += (teamFiles.teamPhoto === undefined) ? '\n- Missing team photo' : '';
             message += (teamFiles.teamPhoto !== undefined && teamFiles.teamPhoto.length > 1) ? `\n- Multiple files found for team photo: ${JSON.stringify(teamFiles.teamPhoto.map(file => file.name))}` : '';
@@ -387,6 +387,25 @@ const driveGetFileIfExists = async (q: string): Promise<drive_v3.Schema$File[]> 
     }
     else {
         return [];
+    }
+}
+
+const extractTeamIdAndTitle = async (folder: drive_v3.Schema$File): Promise<{ id: string, title: string } | undefined> => {
+    if (folder.id === undefined) {
+        return;
+    }
+    const files = await driveGetFolderChildren(folder.id!);
+    for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        const name = file.name?.toLowerCase();
+        if (name?.includes('team_title')) {
+            let title = await parseDriveFile(file.id!, file.mimeType!) as string;
+            title = title.trim();
+            return {
+                id: folder.name!,
+                title,
+            }
+        }
     }
 }
 
@@ -504,6 +523,19 @@ export default function TeamBrochurePage({ session }: { session: Session }) {
             const { team, status } = await parseTeamFolder(folder, rootFileEmbedUrl);
             dispatch({ type: 'set-team', id: folder.id!, pt: { team: team, status: status, root: folder } });
         })
+
+        // Extract CSV of just the team IDs and team titles.
+        // Prints to `console.log` in CSV format.
+        const info: ({id: string, title: string} | undefined)[] = (await Promise.all(folders.map(async (folder) => (await extractTeamIdAndTitle(folder))))).filter(Boolean).sort((a,b) => {
+            if (a === undefined || b === undefined) {
+                return 0;
+            }
+            else {
+                return a.id.localeCompare(b.id);
+            }
+
+        });
+        console.log(info.map((item) => (item !== undefined ) ? `${item.id}, ${item.title}` : false).filter(Boolean).join('\n'))
 
         dispatch({ type: 'update-state', state: {
             fetching: false,
